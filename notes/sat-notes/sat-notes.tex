@@ -1,0 +1,20 @@
+\documentclass[12pt]{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\begin{document}
+
+\title{Notes on SAT Solving}
+\author{William Schultz}
+\date{\today}
+
+\maketitle
+
+\section{DPLL}
+
+The original DPLL algorithm views satisfiability as a search problem over the tree of possible boolean assignments, and combines this with \textit{conditioning} and \textit{unit propagation} techniques. In its most basic form, given a CNF formula $\Delta$, we start by assigning some variable a value of \textit{true} or \textit{false}, and then simplify the overall formula. We say that $\Delta$ is \textit{conditioned} on a literal $L$, notated as $\Delta|L$, if we replace the value of literal $L$ with \textit{true}, and the value of literal $\neg L$ with \textit{false}.
+
+After assigning a literal with a concrete value, we simplify the overall formula. If we simplify to something that is satisfied, then we're done, and can return a satisfying assignment. If we ever reach a state where all clauses cannot be satisfied, then we return unsatisfiable.
+
+\end{document}
