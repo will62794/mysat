@@ -45,6 +45,13 @@ class Literal{
         std::string getVarName(){
             return _name;
         }
+
+        /**
+         * Evaluate this literal for a given truth value of its variable.
+         */
+        bool eval(bool val){
+            return _neg ? !val : val;
+        }
 };
 
 
@@ -112,8 +119,11 @@ class CNF{
             return outStr.substr(0,outStr.length()-2);            
         }
 
-        // Assign values to the specified variables and return a simplified CNF formula.
-        // Assignment is given as a map from variable names to boolean values.
+        /**
+         * Assign values to the specified variables and return a simplified CNF formula. 
+         * 
+         * An assignment is given as a map from variable names to boolean values.
+         */
         CNF assign(std::map<std::string, bool> assgmt){
             // Record the set of variables that have been assigned values.
             std::set<std::string> assignedVars;
@@ -121,21 +131,46 @@ class CNF{
                 assignedVars.insert(it->first);
             }
 
+            // Initialize the set of clauses that will appear in the resulting CNF after assignment.
             std::vector<Clause> outClauses;
             for(auto c : _clauses){
-                // auto inter = std::set_intersection(assignedVars.begin(), assignedVars.end(), c.getVariables().begin(), c.getVariables().end())
-                // std::set<std::string> assignedVars;
-
+                std::vector<Literal> outClauseLits;
+                bool clauseIsTrue = false;
                 // For each literal in this clause, check if it is assigned a value.
                 for(auto lit : c.getLiterals()){
-                    if(assignedVars.find(lit.getVarName()) != assignedVars.end()){
-                        // TODO. Assign variable and reduce clause.
+                    if(clauseIsTrue){
+                        continue;
                     }
+                    if(assignedVars.find(lit.getVarName()) != assignedVars.end()){
+                        // If this literal evaluates to TRUE under the
+                        // assignment, then the whole clause is satisfied, so we
+                        // remove it i.e. don't add it to the output CNF. 
+                        bool assignedVal = assgmt[lit.getVarName()];
+                        if(lit.eval(assignedVal)){
+                            clauseIsTrue = true;
+                        } else{
+                            // If the literal evaluates to FALSE, then we simply
+                            // remove it from the output clause i.e. we don't
+                            // add it.
+                            continue;
+                        }
 
+                    } else{
+                        // If this literal is not assigned a value, then simply add it the 
+                        // current clause as is.
+                        outClauseLits.push_back(lit);
+                    }
+                }
+
+                // Add this clause if it was not necessarily satisfied under the
+                // given assignment.
+                if(!clauseIsTrue){
+                    Clause newClause = Clause(outClauseLits);
+                    outClauses.push_back(newClause);
                 }
             }
 
-            return CNF();
+            return CNF(outClauses);
         }
 
 };
@@ -168,8 +203,24 @@ int main(int argc, char const *argv[])
     std::cout << c1.toString() << std::endl;
     std::cout << c2.toString() << std::endl;
 
-    auto f1 = CNF({c1,c2});
-    std::cout << f1.toString() << std::endl;
+    // (x \/ y) /\ (y \/ ~z)
+    auto lx = Literal("x");
+    auto ly = Literal("y");
+    auto lnz = Literal("~z");
+
+    auto cxy = Clause({lx,ly});
+    auto cynz = Clause({ly,lnz});
+    auto fa = CNF({cxy,cynz});
+
+    std::map<std::string,bool> ax1 = {
+        {"x", true}
+    };
+    std::map<std::string,bool> ax0 = {
+        {"x", false}
+    };
+    std::cout << "fa: " << fa.toString() << std::endl;
+    std::cout << "fa (x=1): " << fa.assign(ax1).toString() << std::endl;
+    std::cout << "fa (x=0): " << fa.assign(ax0).toString() << std::endl;
 
     return 0;
 }

@@ -69,7 +69,8 @@
             "vector": "cpp",
             "map": "cpp",
             "__tree": "cpp",
-            "set": "cpp"
+            "set": "cpp",
+            "__functional_03": "cpp"
         }
     }
 }
