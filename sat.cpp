@@ -191,6 +191,34 @@ public:
     }
 };
 
+class Context {
+public:
+    // Current variable node.
+    std::string _currVar;
+    // Index of the variable in a given variable ordering.
+    int _currVarInd;
+    // Current partial assignment.
+    std::map<std::string, bool> _assmt;
+
+    Context(std::string currVar, int currVarInd, std::map<std::string, bool> assmt) {
+        _assmt = assmt;
+        _currVar = currVar;
+        _currVarInd = currVarInd;
+    }
+};
+
+// TODO: Move this into a dedicated class representing a partial variable assignment.
+std::string assignmentToString(std::map<std::string,bool> a){
+    std::string outStr;
+    for (auto it = a.begin(); it != a.end(); it++) {
+        outStr += it->first;
+        outStr += "=";
+        outStr += it->second ? "1" : "0";
+        outStr += " ";
+    }
+    return outStr;
+}
+
 /**
  * Satisfiability solver.
  */
@@ -199,6 +227,8 @@ public:
     Solver() {}
 
     bool isSat(CNF f) {
+        std::cout << "# checking isSat # " << std::endl;
+
         auto varSet = f.getVariableSet();
         std::vector<std::string> varList;
         // Initialize list of variables in some fixed, arbitrary order.
@@ -207,10 +237,42 @@ public:
             std::cout << "var: " << v << std::endl;
         }
 
-        std::vector<std::string> currVarPath;
 
-        // 1. Pick the next unassigned variable and give it a truth value.
-        // TODO.
+        // The set of tree nodes in the frontier i.e. discovered but not explored yet.
+        std::vector<Context> frontier;
+
+        std::map<std::string, bool> initVals;
+        frontier.push_back(Context(varList.at(0), 0, initVals));
+
+        // Explore all possible assignments in a depth first manner.
+        while (frontier.size() > 0) {
+            Context currNode = frontier.back();
+            frontier.pop_back();
+            int varNextInd = currNode._currVarInd + 1;
+
+            // Reached the last variable.
+            if (varNextInd >= varList.size()) {
+                continue;
+            }
+
+            std::cout << "currVar: " << varList.at(varNextInd) << std::endl;
+            std::cout << "currVarInd: " << varNextInd << std::endl;
+            std::cout << "curr assignment: " << assignmentToString(currNode._assmt) << std::endl;
+
+            // Explore each possible true/false assignment for this variable.
+            std::map<std::string, bool> tAssign(currNode._assmt);
+            std::map<std::string, bool> fAssign(currNode._assmt);
+
+            tAssign.insert(std::make_pair(currNode._currVar, true));
+            fAssign.insert(std::make_pair(currNode._currVar, false));
+
+            Context tctx(varList.at(varNextInd), varNextInd, tAssign);
+            Context fctx(varList.at(varNextInd), varNextInd, fAssign);
+
+            frontier.push_back(tctx);
+            frontier.push_back(fctx);
+        }
+
         return false;
     }
 };
