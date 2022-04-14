@@ -112,6 +112,20 @@ public:
         _clauses = clauses;
     }
 
+    /**
+     * Returns the set of variables that appear in the CNF formula.
+     */
+    std::set<std::string> getVariableSet() {
+        std::set<std::string> outSet;
+        for (auto c : _clauses) {
+            auto clauseVars = c.getVariableSet();
+            for (auto v : clauseVars) {
+                outSet.insert(v);
+            }
+        }
+        return outSet;
+    }
+
     std::string toString() {
         std::string outStr;
         for (auto e : _clauses) {
@@ -181,9 +195,21 @@ public:
  * Satisfiability solver.
  */
 class Solver {
+public:
     Solver() {}
 
     bool isSat(CNF f) {
+        auto varSet = f.getVariableSet();
+        std::vector<std::string> varList;
+        // Initialize list of variables in some fixed, arbitrary order.
+        for (auto v : varSet) {
+            varList.push_back(v);
+            std::cout << "var: " << v << std::endl;
+        }
+
+        std::vector<std::string> currVarPath;
+
+        // 1. Pick the next unassigned variable and give it a truth value.
         // TODO.
         return false;
     }
@@ -215,6 +241,10 @@ int main(int argc, char const* argv[]) {
     std::cout << "fa: " << fa.toString() << std::endl;
     std::cout << "fa (x=1): " << fa.assign(ax1).toString() << std::endl;
     std::cout << "fa (x=0): " << fa.assign(ax0).toString() << std::endl;
+
+
+    Solver solver = Solver();
+    std::cout << "fa isSat: " << std::endl << solver.isSat(fa) << std::endl;
 
     return 0;
 }
