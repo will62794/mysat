@@ -47,6 +47,10 @@ public:
         return _name;
     }
 
+    bool isNegated() {
+        return _neg;
+    }
+
     /**
      * Evaluate this literal for a given truth value of its variable.
      */
@@ -124,18 +128,18 @@ public:
         }
     }
 
-    static CNF randomCNF(int nclauses, int nvars, int clause_size){
+    static CNF randomCNF(int nclauses, int nvars, int clause_size) {
         std::vector<std::string> allVars;
-        for(int i=0;i<nvars;i++){
+        for (int i = 0; i < nvars; i++) {
             std::string baseVarName = "x";
             std::string varIndStr = std::to_string(i);
             allVars.push_back(baseVarName + varIndStr);
         }
 
         std::vector<Clause> allClauses;
-        for(int i=0;i<nclauses;i++){
+        for (int i = 0; i < nclauses; i++) {
             std::vector<Literal> currClauseLits;
-            for(int j=0;j<clause_size;j++){
+            for (int j = 0; j < clause_size; j++) {
                 int randVarInd = rand() % nvars;
                 auto randVar = allVars[randVarInd];
                 auto negation = rand() % 2 ? "~" : "";
@@ -223,6 +227,43 @@ public:
         }
         // Remove the extra conjunction symbol.
         return outStr.substr(0, outStr.length() - 2) + "}";
+    }
+
+    /**
+     * Generates an encoding of this CNF formula in the DIMACS CNF file format.
+     *
+     * See https://people.sc.fsu.edu/~jburkardt/data/cnf/cnf.html for a
+     * description of the file format.
+     */
+    std::string toDIMACS() {
+        std::string outStr;
+
+        // Write the 'problem' line.
+        // p cnf <num_vars> <num_clauses>
+        std::string numVarsStr = std::to_string(getVariableList().size());
+        outStr += "p cnf " + numVarsStr + " " + std::to_string(_clauses.size());
+        outStr += "\n";
+
+        // Map from varialbe names to numeric identifiers.
+        std::map<std::string, int> varNumMap;
+        for (int ind = 0; ind < getVariableList().size(); ind++) {
+            auto v = getVariableList()[ind];
+            // Variable identifiers in DIMACS are 1-indexed.
+            varNumMap.insert(std::make_pair(v, ind + 1));
+        }
+
+        // Write each clause.
+        for (auto c : _clauses) {
+            for (auto l : c.getLiterals()) {
+                int varNum = varNumMap[l.getVarName()];
+                std::string neg = l.isNegated() ? "-" : "";
+                outStr += (neg + std::to_string(varNum));
+                outStr += " ";
+            }
+            // The definition of each clause is terminated by a final value of "0".
+            outStr += "0\n";
+        }
+        return outStr;
     }
 
     /**
@@ -398,13 +439,13 @@ public:
             std::cout << "fassigned: " << fassigned.toString() << std::endl;
             if (fassigned.isEmpty()) {
                 _currAssignment = currAssmt;
-                std::cout << "fassigned is empty.";
+                std::cout << "fassigned is empty." << std::endl;
                 return true;
             }
             if (fassigned.hasEmptyClause()) {
                 // Current assignment is necessarily UNSAT, so no need to
                 // explore further down this branch.
-                std::cout << "fassigned has empty clause.";
+                std::cout << "fassigned has empty clause." << std::endl;
                 continue;
             }
 
@@ -487,10 +528,10 @@ int main(int argc, char const* argv[]) {
     // Preliminary test cases.
     //
 
-    auto ct1 = CNF({{"x", "y"}, {"~y"}});
-    auto ct2 = CNF({{"x", "y"}, {"~x"}});
-    auto ct3 = CNF({{"x"}, {"~x"}});
-    auto ct4 = CNF({{"x", "y"}, {"x", "~y"}, {"~x", "y"}, {"~x", "~y"}});
+    CNF ct1 = CNF({{"x", "y"}, {"~y"}});
+    CNF ct2 = CNF({{"x", "y"}, {"~x"}});
+    CNF ct3 = CNF({{"x"}, {"~x"}});
+    CNF ct4 = CNF({{"x", "y"}, {"x", "~y"}, {"~x", "y"}, {"~x", "~y"}});
 
     assert(solver.isSatBruteForce(ct1));
     assert(solver.isSatBruteForce(ct2));
@@ -502,14 +543,21 @@ int main(int argc, char const* argv[]) {
     assert(solver.isSatBruteForce(ct3) == solver.isSat(ct3));
     assert(solver.isSatBruteForce(ct4) == solver.isSat(ct4));
 
+    auto d1 = ct4.toDIMACS();
+    std::cout << d1;
+    return 0;
+
     // Generate random CNF SAT formulas.
     srand(33);
 
-    for(int k=0;k<20;k++){
-        int nclauses = 3;
-        int nvars = 5;
+    int niters = 50;
+    for (int k = 0; k < niters; k++) {
+        int nclauses = 10;
+        int nvars = 8;
         int clause_size = 3;
-        std::cout << CNF::randomCNF(nclauses,nvars,clause_size).toString() << std::endl;
+        auto cf = CNF::randomCNF(nclauses, nvars, clause_size);
+        std::cout << cf.toString() << std::endl;
+        assert(solver.isSatBruteForce(cf) == solver.isSat(cf));
     }
 
     return 0;
