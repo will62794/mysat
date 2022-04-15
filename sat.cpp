@@ -206,11 +206,11 @@ public:
     /**
      * Evaluate a CNF given a full (non partial) assignment.
      */
-    bool eval(std::map<std::string, bool> assgmt){
+    bool eval(std::map<std::string, bool> assgmt) {
         bool allClausesTrue = true;
-        for(Clause c : _clauses){
+        for (Clause c : _clauses) {
             bool clauseTrue = false;
-            for(auto l : c.getLiterals()){
+            for (auto l : c.getLiterals()) {
                 clauseTrue = clauseTrue || l.eval(assgmt[l.getVarName()]);
             }
             allClausesTrue = allClausesTrue && clauseTrue;
@@ -376,33 +376,44 @@ public:
             std::cout << "fassigned: " << fassigned.toString() << std::endl;
             if (fassigned.isEmpty()) {
                 _currAssignment = currAssmt;
+                std::cout << "fassigned is empty.";
                 return true;
             }
             if (fassigned.hasEmptyClause()) {
                 // Current assignment is necessarily UNSAT, so no need to
                 // explore further down this branch.
+                std::cout << "fassigned has empty clause.";
                 continue;
             }
 
             int varNextInd = currNode._currVarInd + 1;
+            std::cout << "varNextInd: " << varNextInd << std::endl;
 
-            // Explore each possible true/false assignment for this variable.
-            std::map<std::string, bool> tAssign(currNode._assmt);
-            std::map<std::string, bool> fAssign(currNode._assmt);
+            // Check if we reached the last variable i.e. a leaf.
+            if (varNextInd <= varList.size()) {
 
-            tAssign.insert(std::make_pair(currNode._currVar, true));
-            fAssign.insert(std::make_pair(currNode._currVar, false));
+                // Explore each possible true/false assignment for this variable.
+                std::map<std::string, bool> tAssign(currNode._assmt);
+                std::map<std::string, bool> fAssign(currNode._assmt);
 
-            // Reached the last variable i.e. a leaf.
-            if (varNextInd >= varList.size()) {
-                continue;
+                tAssign.insert(std::make_pair(currNode._currVar, true));
+                fAssign.insert(std::make_pair(currNode._currVar, false));
+
+                std::cout << "getnext var: " << varNextInd << std::endl;
+
+                // If we have reached the last variable, then pass in a dummy
+                // 'leaf' variable node for the next level in the search tree.
+                // This value isn't explicitly used, but it makes it convenient
+                // so that we can traverse one more level deep in the search
+                // tree.
+                auto nextVar = varNextInd == varList.size() ? "LEAF" : varList.at(varNextInd);
+
+                Context tctx(nextVar, varNextInd, tAssign);
+                Context fctx(nextVar, varNextInd, fAssign);
+
+                frontier.push_back(tctx);
+                frontier.push_back(fctx);
             }
-
-            Context tctx(varList.at(varNextInd), varNextInd, tAssign);
-            Context fctx(varList.at(varNextInd), varNextInd, fAssign);
-
-            frontier.push_back(tctx);
-            frontier.push_back(fctx);
         }
 
         return false;
@@ -457,18 +468,17 @@ int main(int argc, char const* argv[]) {
     auto ct1 = CNF({{"x", "y"}, {"~y"}});
     auto ct2 = CNF({{"x", "y"}, {"~x"}});
     auto ct3 = CNF({{"x"}, {"~x"}});
-    auto ct4 = CNF({{"x","y"}, {"x","~y"}, {"~x","y"}, {"~x","~y"}});
+    auto ct4 = CNF({{"x", "y"}, {"x", "~y"}, {"~x", "y"}, {"~x", "~y"}});
 
     assert(solver.isSatBruteForce(ct1));
     assert(solver.isSatBruteForce(ct2));
     assert(!solver.isSatBruteForce(ct3));
     assert(!solver.isSatBruteForce(ct4));
 
-    std::cout << "ct1:" << ct1.toString() << std::endl;
-    std::cout << "ct1 is sat:" << solver.isSat(ct1) <<   std::endl;
-    // assert(solver.isSatBruteForce(ct1)==solver.isSat(ct1));
-    // assert(solver.isSatBruteForce(ct2)==solver.isSat(ct1));
-    // assert(solver.isSatBruteForce(ct2)==solver.isSat(ct2));
+    assert(solver.isSatBruteForce(ct1) == solver.isSat(ct1));
+    assert(solver.isSatBruteForce(ct2) == solver.isSat(ct2));
+    assert(solver.isSatBruteForce(ct3) == solver.isSat(ct3));
+    assert(solver.isSatBruteForce(ct4) == solver.isSat(ct4));
 
     return 0;
 }
