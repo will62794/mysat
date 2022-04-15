@@ -545,19 +545,21 @@ int main(int argc, char const* argv[]) {
 
     auto d1 = ct4.toDIMACS();
     std::cout << d1;
-    return 0;
 
     // Generate random CNF SAT formulas.
-    srand(33);
+    srand(time(NULL));
 
-    int niters = 50;
+    int niters = 3;
     for (int k = 0; k < niters; k++) {
-        int nclauses = 10;
-        int nvars = 8;
+        int nclauses = 20;
+        int nvars = 3;
         int clause_size = 3;
         auto cf = CNF::randomCNF(nclauses, nvars, clause_size);
         std::cout << cf.toString() << std::endl;
-        assert(solver.isSatBruteForce(cf) == solver.isSat(cf));
+        auto retOracle = solver.isSatBruteForce(cf) ;
+        assert(retOracle == solver.isSat(cf));
+        std::cout << "Result: " << (retOracle ? "SAT" : "UNSAT") << std::endl;
+        std::cout << cf.toDIMACS() << std::endl;
     }
 
     return 0;
