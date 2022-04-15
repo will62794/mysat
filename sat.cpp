@@ -69,6 +69,12 @@ public:
         _elems = elems;
     }
 
+    Clause(std::vector<std::string> elems) {
+        for (auto ls : elems) {
+            _elems.push_back(Literal(ls));
+        }
+    }
+
     std::string toString() {
         std::string outStr;
         for (auto e : _elems) {
@@ -110,6 +116,12 @@ public:
 
     CNF(std::vector<Clause> clauses) {
         _clauses = clauses;
+    }
+
+    CNF(std::vector<std::vector<std::string>> clauses) {
+        for (auto c : clauses) {
+            _clauses.push_back(Clause(c));
+        }
     }
 
     /**
@@ -164,6 +176,18 @@ public:
             }
         }
         return outSet;
+    }
+
+    /**
+     * Returns the set of variables that appear in the CNF formula in a fixed, arbitrary order.
+     */
+    std::vector<std::string> getVariableList() {
+        auto varSet = getVariableSet();
+        std::vector<std::string> varList;
+        for (auto v : varSet) {
+            varList.push_back(v);
+        }
+        return varList;
     }
 
     std::string toString() {
@@ -279,16 +303,41 @@ public:
         return _currAssignment;
     }
 
+    bool _isSatBruteForceRec(CNF f,
+                             std::vector<std::string> varList,
+                             int varInd,
+                             std::map<std::string, bool> currAssign) {
+        if (varInd == varList.size()) {
+            std::cout << assignmentToString(currAssign) << std::endl;
+            return f.assign(currAssign).isTrue();
+        } else {
+            std::map<std::string, bool> tAssign(currAssign);
+            tAssign.insert(std::make_pair(varList.at(varInd), true));
+
+            std::map<std::string, bool> fAssign(currAssign);
+            fAssign.insert(std::make_pair(varList.at(varInd), false));
+
+            bool tbranch = _isSatBruteForceRec(f, varList, varInd + 1, tAssign);
+            bool fbranch = _isSatBruteForceRec(f, varList, varInd + 1, fAssign);
+            return tbranch || fbranch;
+        }
+    }
+
+    /**
+     * Check satisfiability by computing the full truth table for a given CNF formula.
+     *
+     * Return true if satisfiable and false if unsatisfiable.
+     */
+    bool isSatBruteForce(CNF f) {
+        auto varList = f.getVariableList();
+        std::map<std::string, bool> initAssign;
+        return _isSatBruteForceRec(f, varList, 0, initAssign);
+    }
+
     bool isSat(CNF f) {
         std::cout << "# checking isSat # " << std::endl;
 
-        auto varSet = f.getVariableSet();
-        std::vector<std::string> varList;
-        // Initialize list of variables in some fixed, arbitrary order.
-        for (auto v : varSet) {
-            varList.push_back(v);
-        }
-
+        std::vector<std::string> varList = f.getVariableList();
 
         // The set of tree nodes in the frontier i.e. discovered but not explored yet.
         std::vector<Context> frontier;
@@ -384,6 +433,22 @@ int main(int argc, char const* argv[]) {
     auto ret1 = fa.assign(a1);
     std::cout << "fa:" << ret1.toString() << std::endl;
     std::cout << "fa true:" << ret1.isTrue() << std::endl;
+
+    //
+    // Preliminary test cases.
+    //
+
+    auto ct1 = CNF({{"x", "y"}, {"~y"}});
+    auto ct2 = CNF({{"x", "y"}, {"~x"}});
+    auto ct3 = CNF({{"x"}, {"~x"}});
+
+    assert(solver.isSatBruteForce(ct1));
+    assert(solver.isSatBruteForce(ct2));
+    assert(!solver.isSatBruteForce(ct3));
+
+    // assert(solver.isSatBruteForce(ct1)==solver.isSat(ct1));
+    // assert(solver.isSatBruteForce(ct2)==solver.isSat(ct1));
+    // assert(solver.isSatBruteForce(ct2)==solver.isSat(ct2));
 
     return 0;
 }
