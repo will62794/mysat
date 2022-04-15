@@ -204,6 +204,21 @@ public:
     }
 
     /**
+     * Evaluate a CNF given a full (non partial) assignment.
+     */
+    bool eval(std::map<std::string, bool> assgmt){
+        bool allClausesTrue = true;
+        for(Clause c : _clauses){
+            bool clauseTrue = false;
+            for(auto l : c.getLiterals()){
+                clauseTrue = clauseTrue || l.eval(assgmt[l.getVarName()]);
+            }
+            allClausesTrue = allClausesTrue && clauseTrue;
+        }
+        return allClausesTrue;
+    }
+
+    /**
      * Assign values to the specified variables and return a simplified CNF formula.
      *
      * An assignment is given as a map from variable names to boolean values.
@@ -309,7 +324,8 @@ public:
                              std::map<std::string, bool> currAssign) {
         if (varInd == varList.size()) {
             std::cout << assignmentToString(currAssign) << std::endl;
-            return f.assign(currAssign).isTrue();
+            // return f.assign(currAssign).isTrue();
+            return f.eval(currAssign);
         } else {
             std::map<std::string, bool> tAssign(currAssign);
             tAssign.insert(std::make_pair(varList.at(varInd), true));
@@ -441,11 +457,15 @@ int main(int argc, char const* argv[]) {
     auto ct1 = CNF({{"x", "y"}, {"~y"}});
     auto ct2 = CNF({{"x", "y"}, {"~x"}});
     auto ct3 = CNF({{"x"}, {"~x"}});
+    auto ct4 = CNF({{"x","y"}, {"x","~y"}, {"~x","y"}, {"~x","~y"}});
 
     assert(solver.isSatBruteForce(ct1));
     assert(solver.isSatBruteForce(ct2));
     assert(!solver.isSatBruteForce(ct3));
+    assert(!solver.isSatBruteForce(ct4));
 
+    std::cout << "ct1:" << ct1.toString() << std::endl;
+    std::cout << "ct1 is sat:" << solver.isSat(ct1) <<   std::endl;
     // assert(solver.isSatBruteForce(ct1)==solver.isSat(ct1));
     // assert(solver.isSatBruteForce(ct2)==solver.isSat(ct1));
     // assert(solver.isSatBruteForce(ct2)==solver.isSat(ct2));
