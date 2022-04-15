@@ -340,7 +340,7 @@ public:
     }
 
     /**
-     * Check satisfiability by computing the full truth table for a given CNF formula.
+     * Check satisfiability by brute force exploration of all possible assignments.
      *
      * Return true if satisfiable and false if unsatisfiable.
      */
