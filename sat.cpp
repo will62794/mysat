@@ -124,6 +124,28 @@ public:
         }
     }
 
+    static CNF randomCNF(int nclauses, int nvars, int clause_size){
+        std::vector<std::string> allVars;
+        for(int i=0;i<nvars;i++){
+            std::string baseVarName = "x";
+            std::string varIndStr = std::to_string(i);
+            allVars.push_back(baseVarName + varIndStr);
+        }
+
+        std::vector<Clause> allClauses;
+        for(int i=0;i<nclauses;i++){
+            std::vector<Literal> currClauseLits;
+            for(int j=0;j<clause_size;j++){
+                int randVarInd = rand() % nvars;
+                auto randVar = allVars[randVarInd];
+                auto negation = rand() % 2 ? "~" : "";
+                currClauseLits.push_back(Literal(negation + randVar));
+            }
+            allClauses.push_back(Clause(currClauseLits));
+        }
+        return CNF(allClauses);
+    }
+
     /**
      * Is this CNF formula equivalent to 'true' i.e. is it an empty set of
      * clauses.
@@ -479,6 +501,16 @@ int main(int argc, char const* argv[]) {
     assert(solver.isSatBruteForce(ct2) == solver.isSat(ct2));
     assert(solver.isSatBruteForce(ct3) == solver.isSat(ct3));
     assert(solver.isSatBruteForce(ct4) == solver.isSat(ct4));
+
+    // Generate random CNF SAT formulas.
+    srand(33);
+
+    for(int k=0;k<20;k++){
+        int nclauses = 3;
+        int nvars = 5;
+        int clause_size = 3;
+        std::cout << CNF::randomCNF(nclauses,nvars,clause_size).toString() << std::endl;
+    }
 
     return 0;
 }
