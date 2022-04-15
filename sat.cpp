@@ -116,8 +116,16 @@ public:
      * Is this CNF formula equivalent to 'true' i.e. is it an empty set of
      * clauses.
      */
-    bool isTrue(){
+    bool isTrue() {
         return isEmpty();
+    }
+
+    /**
+     * Is this CNF formula equivalent to 'true' i.e. does it contain a single
+     * empty clause.
+     */
+    bool isFalse() {
+        return _clauses.size() == 1 && _clauses.at(0).getLiterals().size() == 0;
     }
 
     /**
@@ -159,13 +167,16 @@ public:
     }
 
     std::string toString() {
-        std::string outStr;
+        if (_clauses.size() == 0) {
+            return "{}";
+        }
+        std::string outStr = "{ ";
         for (auto e : _clauses) {
             outStr += "(" + e.toString() + ")";
             outStr += " & ";
         }
         // Remove the extra conjunction symbol.
-        return outStr.substr(0, outStr.length() - 2);
+        return outStr.substr(0, outStr.length() - 2) + "}";
     }
 
     /**
@@ -355,11 +366,12 @@ int main(int argc, char const* argv[]) {
     auto cynz = Clause({lny, lnz});
     auto fa = CNF({cxy, cynz});
 
-    std::map<std::string, bool> ax1 = {{"x", true}};
-    std::map<std::string, bool> ax0 = {{"x", false}};
+    std::map<std::string, bool> ax1 = {{"x", true}, {"y", false}};
+    std::map<std::string, bool> ax0y1z1 = {{"x", false}, {"y", true}, {"z", true}};
     std::cout << "fa: " << fa.toString() << std::endl;
     std::cout << "fa (x=1): " << fa.assign(ax1).toString() << std::endl;
-    std::cout << "fa (x=0): " << fa.assign(ax0).toString() << std::endl;
+    std::cout << "fa (x0y1z1): " << fa.assign(ax0y1z1).toString() << std::endl;
+    std::cout << "fa (x0y1z1) false: " << fa.assign(ax0y1z1).isFalse() << std::endl;
 
 
     Solver solver = Solver();
