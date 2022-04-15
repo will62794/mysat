@@ -113,6 +113,30 @@ public:
     }
 
     /**
+     * Returns whether this CNF contains no clauses.
+     */
+    bool isEmpty() {
+        return _clauses.size() == 0;
+    }
+
+    /**
+     * Returns whether this CNF contains some empty clause.
+     */
+    bool hasEmptyClause() {
+        if (isEmpty()) {
+            return false;
+        }
+
+        for (auto c : _clauses) {
+            if (c.getLiterals().size() == 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    /**
      * Returns the set of variables that appear in the CNF formula.
      */
     std::set<std::string> getVariableSet() {
@@ -208,23 +232,33 @@ public:
 };
 
 // TODO: Move this into a dedicated class representing a partial variable assignment.
-std::string assignmentToString(std::map<std::string,bool> a){
-    std::string outStr;
+std::string assignmentToString(std::map<std::string, bool> a) {
+    if (a.size() == 0) {
+        return "{}";
+    }
+    std::string outStr = "{ ";
     for (auto it = a.begin(); it != a.end(); it++) {
         outStr += it->first;
         outStr += "=";
         outStr += it->second ? "1" : "0";
         outStr += " ";
     }
-    return outStr;
+    return outStr + "}";
 }
 
 /**
  * Satisfiability solver.
  */
 class Solver {
+private:
+    std::map<std::string, bool> _currAssignment;
+
 public:
     Solver() {}
+
+    std::map<std::string, bool> getAssignment() {
+        return _currAssignment;
+    }
 
     bool isSat(CNF f) {
         std::cout << "# checking isSat # " << std::endl;
@@ -234,7 +268,6 @@ public:
         // Initialize list of variables in some fixed, arbitrary order.
         for (auto v : varSet) {
             varList.push_back(v);
-            std::cout << "var: " << v << std::endl;
         }
 
 
@@ -248,16 +281,26 @@ public:
         while (frontier.size() > 0) {
             Context currNode = frontier.back();
             frontier.pop_back();
-            int varNextInd = currNode._currVarInd + 1;
 
-            // Reached the last variable.
-            if (varNextInd >= varList.size()) {
+            std::cout << "currVar: '" << currNode._currVar << "', varInd=" << currNode._currVarInd
+                      << std::endl;
+            std::cout << "curr assignment: " << assignmentToString(currNode._assmt) << std::endl;
+
+            // Reduce based on current assignment.
+            auto currAssmt = currNode._assmt;
+            CNF fassigned = f.assign(currAssmt);
+            std::cout << "fassigned: " << fassigned.toString() << std::endl;
+            if (fassigned.isEmpty()) {
+                _currAssignment = currAssmt;
+                return true;
+            }
+            if (fassigned.hasEmptyClause()) {
+                // Current assignment is necessarily UNSAT, so no need to
+                // explore further down this branch.
                 continue;
             }
 
-            std::cout << "currVar: " << varList.at(varNextInd) << std::endl;
-            std::cout << "currVarInd: " << varNextInd << std::endl;
-            std::cout << "curr assignment: " << assignmentToString(currNode._assmt) << std::endl;
+            int varNextInd = currNode._currVarInd + 1;
 
             // Explore each possible true/false assignment for this variable.
             std::map<std::string, bool> tAssign(currNode._assmt);
@@ -265,6 +308,11 @@ public:
 
             tAssign.insert(std::make_pair(currNode._currVar, true));
             fAssign.insert(std::make_pair(currNode._currVar, false));
+
+            // Reached the last variable i.e. a leaf.
+            if (varNextInd >= varList.size()) {
+                continue;
+            }
 
             Context tctx(varList.at(varNextInd), varNextInd, tAssign);
             Context fctx(varList.at(varNextInd), varNextInd, fAssign);
@@ -289,13 +337,14 @@ int main(int argc, char const* argv[]) {
     std::cout << c1.toString() << std::endl;
     std::cout << c2.toString() << std::endl;
 
-    // (x \/ y) /\ (y \/ ~z)
+    // (x \/ y) /\ (~y \/ ~z)
     auto lx = Literal("x");
     auto ly = Literal("y");
+    auto lny = Literal("~y");
     auto lnz = Literal("~z");
 
     auto cxy = Clause({lx, ly});
-    auto cynz = Clause({ly, lnz});
+    auto cynz = Clause({lny, lnz});
     auto fa = CNF({cxy, cynz});
 
     std::map<std::string, bool> ax1 = {{"x", true}};
@@ -306,7 +355,9 @@ int main(int argc, char const* argv[]) {
 
 
     Solver solver = Solver();
-    std::cout << "fa isSat: " << std::endl << solver.isSat(fa) << std::endl;
+    auto ret = solver.isSat(fa);
+    std::cout << "fa isSat: " << ret << std::endl;
+    std::cout << "fa assignment: " << assignmentToString(solver.getAssignment()) << std::endl;
 
     return 0;
 }
