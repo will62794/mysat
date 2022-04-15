@@ -334,10 +334,21 @@ public:
 
         return CNF(outClauses);
     }
+
+    /**
+     * Apply unit resolution to the current CNF and return a new formula with the result.
+     */
+    CNF unitPropagate() {
+        // for each unit clause:
+        //  assign value to that variable that makes its clause necessarily true.
+        // TODO.
+        return CNF();
+    }
 };
 
 class Context {
 public:
+    CNF _f;
     // Current variable node.
     std::string _currVar;
     // Index of the variable in a given variable ordering.
@@ -345,7 +356,8 @@ public:
     // Current partial assignment.
     std::map<std::string, bool> _assmt;
 
-    Context(std::string currVar, int currVarInd, std::map<std::string, bool> assmt) {
+    Context(CNF f, std::string currVar, int currVarInd, std::map<std::string, bool> assmt) {
+        _f = f;
         _assmt = assmt;
         _currVar = currVar;
         _currVarInd = currVarInd;
@@ -420,7 +432,7 @@ public:
         std::vector<Context> frontier;
 
         std::map<std::string, bool> initVals;
-        frontier.push_back(Context(varList.at(0), 0, initVals));
+        frontier.push_back(Context(f, varList.at(0), 0, initVals));
 
         // Explore all possible assignments in a depth first manner.
         while (frontier.size() > 0) {
@@ -433,7 +445,13 @@ public:
 
             // Reduce based on current assignment.
             auto currAssmt = currNode._assmt;
-            CNF fassigned = f.assign(currAssmt);
+            CNF currF = currNode._f;
+            CNF fassigned = currF.assign(currAssmt);
+
+            // Close the formula under unit resolution.
+            // TODO: Enable this once implemented.
+            // fassigned = fassigned.unitPropagate();
+
             std::cout << "fassigned: " << fassigned.toString() << std::endl;
             if (fassigned.isEmpty()) {
                 _currAssignment = currAssmt;
@@ -467,8 +485,8 @@ public:
                 // tree.
                 auto nextVar = varNextInd == varList.size() ? "LEAF" : varList.at(varNextInd);
 
-                Context tctx(nextVar, varNextInd, tAssign);
-                Context fctx(nextVar, varNextInd, fAssign);
+                Context tctx(fassigned, nextVar, varNextInd, tAssign);
+                Context fctx(fassigned, nextVar, varNextInd, fAssign);
 
                 frontier.push_back(tctx);
                 frontier.push_back(fctx);
@@ -545,10 +563,10 @@ int main(int argc, char const* argv[]) {
     // Generate random CNF SAT formulas.
     srand(time(NULL));
 
-    int niters = 3;
+    int niters = 50;
     for (int k = 0; k < niters; k++) {
-        int nclauses = 60;
-        int nvars = 10;
+        int nclauses = 40;
+        int nvars = 8;
         int clause_size = 3;
         auto cf = CNF::randomCNF(nclauses, nvars, clause_size);
         std::cout << cf.toString() << std::endl;
