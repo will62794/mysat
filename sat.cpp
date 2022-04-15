@@ -386,8 +386,6 @@ public:
                              int varInd,
                              std::map<std::string, bool> currAssign) {
         if (varInd == varList.size()) {
-            std::cout << assignmentToString(currAssign) << std::endl;
-            // return f.assign(currAssign).isTrue();
             return f.eval(currAssign);
         } else {
             std::map<std::string, bool> tAssign(currAssign);
@@ -431,7 +429,7 @@ public:
 
             std::cout << "currVar: '" << currNode._currVar << "', varInd=" << currNode._currVarInd
                       << std::endl;
-            std::cout << "curr assignment: " << assignmentToString(currNode._assmt) << std::endl;
+            // std::cout << "curr assignment: " << assignmentToString(currNode._assmt) << std::endl;
 
             // Reduce based on current assignment.
             auto currAssmt = currNode._assmt;
@@ -461,8 +459,6 @@ public:
 
                 tAssign.insert(std::make_pair(currNode._currVar, true));
                 fAssign.insert(std::make_pair(currNode._currVar, false));
-
-                std::cout << "getnext var: " << varNextInd << std::endl;
 
                 // If we have reached the last variable, then pass in a dummy
                 // 'leaf' variable node for the next level in the search tree.
@@ -551,8 +547,8 @@ int main(int argc, char const* argv[]) {
 
     int niters = 3;
     for (int k = 0; k < niters; k++) {
-        int nclauses = 20;
-        int nvars = 3;
+        int nclauses = 60;
+        int nvars = 10;
         int clause_size = 3;
         auto cf = CNF::randomCNF(nclauses, nvars, clause_size);
         std::cout << cf.toString() << std::endl;
