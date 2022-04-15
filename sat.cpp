@@ -113,6 +113,14 @@ public:
     }
 
     /**
+     * Is this CNF formula equivalent to 'true' i.e. is it an empty set of
+     * clauses.
+     */
+    bool isTrue(){
+        return isEmpty();
+    }
+
+    /**
      * Returns whether this CNF contains no clauses.
      */
     bool isEmpty() {
@@ -358,6 +366,12 @@ int main(int argc, char const* argv[]) {
     auto ret = solver.isSat(fa);
     std::cout << "fa isSat: " << ret << std::endl;
     std::cout << "fa assignment: " << assignmentToString(solver.getAssignment()) << std::endl;
+
+
+    auto a1 = solver.getAssignment();
+    auto ret1 = fa.assign(a1);
+    std::cout << "fa:" << ret1.toString() << std::endl;
+    std::cout << "fa true:" << ret1.isTrue() << std::endl;
 
     return 0;
 }
