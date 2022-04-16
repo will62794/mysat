@@ -97,6 +97,13 @@ public:
     }
 
     /**
+     * Returns the number of literals in this clause.
+     */
+    int size() {
+        return _elems.size();
+    }
+
+    /**
      * Return the set of variables that appear in this clause.
      */
     std::set<std::string> getVariableSet() {
@@ -331,18 +338,45 @@ public:
                 outClauses.push_back(newClause);
             }
         }
-
         return CNF(outClauses);
     }
 
     /**
-     * Apply unit resolution to the current CNF and return a new formula with the result.
+     * Does there exist a unit clause in this CNF.
      */
-    CNF unitPropagate() {
-        // for each unit clause:
-        //  assign value to that variable that makes its clause necessarily true.
-        // TODO.
-        return CNF();
+    bool hasUnitClause() {
+        for (auto c : _clauses) {
+            if (c.size() == 1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Get some literal which has a unit clause in this CNF.
+     *
+     * Assumes there exists some unit clause.
+     */
+    Literal getUnitLiteral() {
+        for (auto c : _clauses) {
+            if (c.size() == 1) {
+                return c.getLiterals()[0];
+            }
+        }
+        // Should never reach.
+        assert(false);
+        return Literal("");
+    }
+
+    /**
+     * Apply unit resolution to the current CNF and return a new formula with the result.
+     *
+     * Assumes that the given literal is a unit clause in this CNF.
+     */
+    CNF unitPropagate(Literal l) {
+        // std::vector<Clause> outClauses;
+        return this->assign({{l.getVarName(), !l.isNegated()}});
     }
 };
 
@@ -449,8 +483,10 @@ public:
             CNF fassigned = currF.assign(currAssmt);
 
             // Close the formula under unit resolution.
-            // TODO: Enable this once implemented.
-            // fassigned = fassigned.unitPropagate();
+            while (fassigned.hasUnitClause()) {
+                auto unitLit = fassigned.getUnitLiteral();
+                fassigned = fassigned.unitPropagate(unitLit);
+            }
 
             std::cout << "fassigned: " << fassigned.toString() << std::endl;
             if (fassigned.isEmpty()) {
@@ -563,18 +599,23 @@ int main(int argc, char const* argv[]) {
     // Generate random CNF SAT formulas.
     srand(time(NULL));
 
-    int niters = 50;
+    int niters = 5;
     for (int k = 0; k < niters; k++) {
         int nclauses = 40;
         int nvars = 8;
         int clause_size = 3;
         auto cf = CNF::randomCNF(nclauses, nvars, clause_size);
         std::cout << cf.toString() << std::endl;
-        auto retOracle = solver.isSatBruteForce(cf) ;
+        auto retOracle = solver.isSatBruteForce(cf);
         assert(retOracle == solver.isSat(cf));
         std::cout << "Result: " << (retOracle ? "SAT" : "UNSAT") << std::endl;
         std::cout << cf.toDIMACS() << std::endl;
     }
+
+    CNF t1 = CNF({{"x", "y", "z"}, {"z"}});
+    std::cout << "t1: " << t1.toString() << std::endl;
+    auto t1p = t1.unitPropagate(Literal("z"));
+    std::cout << "t1p: " << t1p.toString() << std::endl;
 
     return 0;
 }
