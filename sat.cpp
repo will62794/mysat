@@ -5,6 +5,59 @@
 #include <vector>
 
 /**
+ * A (potentially partial) assignment of values to variables of a CNF formula.
+ */
+class Assignment {
+private:
+    std::map<std::string, bool> _vals;
+
+public:
+    Assignment() {}
+
+    Assignment(std::map<std::string, bool> a) {
+        _vals = a;
+    }
+
+    std::map<std::string, bool> getVals() {
+        return _vals;
+    }
+
+    std::set<std::string> getAssignedVars() {
+        std::set<std::string> assignedVars;
+        for (auto it = _vals.begin(); it != _vals.end(); it++) {
+            assignedVars.insert(it->first);
+        }
+        return assignedVars;
+    }
+
+    bool getVal(std::string varName) {
+        return _vals[varName];
+    }
+
+    bool hasVar(std::string varName) {
+        return _vals.find(varName) != _vals.end();
+    }
+
+    void set(std::string varName, bool val) {
+        _vals.insert(std::make_pair(varName, val));
+    }
+
+    std::string toString() {
+        if (_vals.size() == 0) {
+            return "{}";
+        }
+        std::string outStr = "{ ";
+        for (auto it = _vals.begin(); it != _vals.end(); it++) {
+            outStr += it->first;
+            outStr += "=";
+            outStr += it->second ? "1" : "0";
+            outStr += " ";
+        }
+        return outStr + "}";
+    }
+};
+
+/**
  * A literal is a boolean variable that may be either negated or non-negated.
  */
 class Literal {
@@ -276,12 +329,12 @@ public:
     /**
      * Evaluate a CNF given a full (non partial) assignment.
      */
-    bool eval(std::map<std::string, bool> assgmt) {
+    bool eval(Assignment assgmt) {
         bool allClausesTrue = true;
         for (Clause c : _clauses) {
             bool clauseTrue = false;
             for (auto l : c.getLiterals()) {
-                clauseTrue = clauseTrue || l.eval(assgmt[l.getVarName()]);
+                clauseTrue = clauseTrue || l.eval(assgmt.getVal(l.getVarName()));
             }
             allClausesTrue = allClausesTrue && clauseTrue;
         }
@@ -293,12 +346,9 @@ public:
      *
      * An assignment is given as a map from variable names to boolean values.
      */
-    CNF assign(std::map<std::string, bool> assgmt) {
+    CNF assign(Assignment assgmt) {
         // Record the set of variables that have been assigned values.
-        std::set<std::string> assignedVars;
-        for (auto it = assgmt.begin(); it != assgmt.end(); it++) {
-            assignedVars.insert(it->first);
-        }
+        std::set<std::string> assignedVars = assgmt.getAssignedVars();
 
         // Initialize the set of clauses that will appear in the resulting CNF after assignment.
         std::vector<Clause> outClauses;
@@ -314,7 +364,7 @@ public:
                     // If this literal evaluates to TRUE under the
                     // assignment, then the whole clause is satisfied, so we
                     // remove it i.e. don't add it to the output CNF.
-                    bool assignedVal = assgmt[lit.getVarName()];
+                    bool assignedVal = assgmt.getVal(lit.getVarName());
                     if (lit.eval(assignedVal)) {
                         clauseIsTrue = true;
                     } else {
@@ -375,8 +425,7 @@ public:
      * Assumes that the given literal is a unit clause in this CNF.
      */
     CNF unitPropagate(Literal l) {
-        // std::vector<Clause> outClauses;
-        return this->assign({{l.getVarName(), !l.isNegated()}});
+        return this->assign(Assignment({{l.getVarName(), !l.isNegated()}}));
     }
 };
 
@@ -388,42 +437,27 @@ public:
     // Index of the variable in a given variable ordering.
     int _currVarInd;
     // Current partial assignment.
-    std::map<std::string, bool> _assmt;
+    Assignment _assmt;
 
-    Context(CNF f, std::string currVar, int currVarInd, std::map<std::string, bool> assmt) {
+    Context(CNF f, std::string currVar, int currVarInd, Assignment assmt) {
         _f = f;
-        _assmt = assmt;
         _currVar = currVar;
         _currVarInd = currVarInd;
+        _assmt = assmt;
     }
 };
-
-// TODO: Move this into a dedicated class representing a partial variable assignment.
-std::string assignmentToString(std::map<std::string, bool> a) {
-    if (a.size() == 0) {
-        return "{}";
-    }
-    std::string outStr = "{ ";
-    for (auto it = a.begin(); it != a.end(); it++) {
-        outStr += it->first;
-        outStr += "=";
-        outStr += it->second ? "1" : "0";
-        outStr += " ";
-    }
-    return outStr + "}";
-}
 
 /**
  * Satisfiability solver.
  */
 class Solver {
 private:
-    std::map<std::string, bool> _currAssignment;
+    Assignment _currAssignment;
 
 public:
     Solver() {}
 
-    std::map<std::string, bool> getAssignment() {
+    Assignment getAssignment() {
         return _currAssignment;
     }
 
@@ -475,7 +509,7 @@ public:
 
             std::cout << "currVar: '" << currNode._currVar << "', varInd=" << currNode._currVarInd
                       << std::endl;
-            std::cout << "curr assignment: " << assignmentToString(currNode._assmt) << std::endl;
+            std::cout << "curr assignment: " << currNode._assmt.toString() << std::endl;
 
             // Reduce based on current assignment.
             auto currAssmt = currNode._assmt;
@@ -488,12 +522,11 @@ public:
                 auto unitLit = fassigned.getUnitLiteral();
                 // Assign the unit literal's variable to truthify the unit clause
                 // and simplify the formula based on this assignment.
-                currAssmt.insert({unitLit.getVarName(), !unitLit.isNegated()});
+                currAssmt.set(unitLit.getVarName(), !unitLit.isNegated());
                 fassigned = fassigned.unitPropagate(unitLit);
             }
             std::cout << "f after unit prop: " << fassigned.toString() << std::endl;
-            std::cout << "curr assignment after unit prop: " << assignmentToString(currAssmt)
-                      << std::endl;
+            std::cout << "curr assignment after unit prop: " << currAssmt.toString() << std::endl;
 
             if (fassigned.isEmpty()) {
                 // If we determined that the formula is necessarily satisfiable
@@ -501,9 +534,9 @@ public:
                 // arbitrary values for the remaining, unassigned variables.
                 for (auto v : varList) {
                     // Assign a value to the currently unassigned variable.
-                    if (currAssmt.find(v) == currAssmt.end()) {
+                    if (!currAssmt.hasVar(v)) {
                         bool arbitraryVal = true;
-                        currAssmt.insert(std::make_pair(v, arbitraryVal));
+                        currAssmt.set(v, arbitraryVal);
                     }
                 }
                 _currAssignment = currAssmt;
@@ -523,11 +556,11 @@ public:
             if (varNextInd <= varList.size()) {
 
                 // Explore each possible true/false assignment for this variable.
-                std::map<std::string, bool> tAssign(currAssmt);
-                std::map<std::string, bool> fAssign(currAssmt);
+                Assignment tAssign(currAssmt);
+                Assignment fAssign(currAssmt);
 
-                tAssign.insert(std::make_pair(currNode._currVar, true));
-                fAssign.insert(std::make_pair(currNode._currVar, false));
+                tAssign.set(currNode._currVar, true);
+                fAssign.set(currNode._currVar, false);
 
                 // If we have reached the last variable, then pass in a dummy
                 // 'leaf' variable node for the next level in the search tree.

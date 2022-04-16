@@ -47,8 +47,8 @@ int main(int argc, char const* argv[]) {
     auto cynz = Clause({lny, lnz});
     auto fa = CNF({cxy, cynz});
 
-    std::map<std::string, bool> ax1 = {{"x", true}, {"y", false}};
-    std::map<std::string, bool> ax0y1z1 = {{"x", false}, {"y", true}, {"z", true}};
+    auto ax1 = Assignment({{"x", true}, {"y", false}});
+    auto ax0y1z1 = Assignment({{"x", false}, {"y", true}, {"z", true}});
     std::cout << "fa: " << fa.toString() << std::endl;
     std::cout << "fa (x=1): " << fa.assign(ax1).toString() << std::endl;
     std::cout << "fa (x0y1z1): " << fa.assign(ax0y1z1).toString() << std::endl;
@@ -58,7 +58,7 @@ int main(int argc, char const* argv[]) {
     Solver solver = Solver();
     auto ret = solver.isSat(fa);
     std::cout << "fa isSat: " << ret << std::endl;
-    std::cout << "fa assignment: " << assignmentToString(solver.getAssignment()) << std::endl;
+    std::cout << "fa assignment: " << solver.getAssignment().toString() << std::endl;
 
 
     auto a1 = solver.getAssignment();
