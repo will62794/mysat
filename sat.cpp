@@ -475,23 +475,38 @@ public:
 
             std::cout << "currVar: '" << currNode._currVar << "', varInd=" << currNode._currVarInd
                       << std::endl;
-            // std::cout << "curr assignment: " << assignmentToString(currNode._assmt) << std::endl;
+            std::cout << "curr assignment: " << assignmentToString(currNode._assmt) << std::endl;
 
             // Reduce based on current assignment.
             auto currAssmt = currNode._assmt;
             CNF currF = currNode._f;
             CNF fassigned = currF.assign(currAssmt);
+            std::cout << "f after assignment: " << fassigned.toString() << std::endl;
 
             // Close the formula under unit resolution.
             while (fassigned.hasUnitClause()) {
                 auto unitLit = fassigned.getUnitLiteral();
+                // Assign the unit literal's variable to truthify the unit clause
+                // and simplify the formula based on this assignment.
+                currAssmt.insert({unitLit.getVarName(), !unitLit.isNegated()});
                 fassigned = fassigned.unitPropagate(unitLit);
             }
+            std::cout << "f after unit prop: " << fassigned.toString() << std::endl;
+            std::cout << "curr assignment after unit prop: " << assignmentToString(currAssmt)
+                      << std::endl;
 
-            std::cout << "fassigned: " << fassigned.toString() << std::endl;
             if (fassigned.isEmpty()) {
+                // If we determined that the formula is necessarily satisfiable
+                // under the current partial assignment, then we can fill in
+                // arbitrary values for the remaining, unassigned variables.
+                for (auto v : varList) {
+                    // Assign a value to the currently unassigned variable.
+                    if (currAssmt.find(v) == currAssmt.end()) {
+                        bool arbitraryVal = true;
+                        currAssmt.insert(std::make_pair(v, arbitraryVal));
+                    }
+                }
                 _currAssignment = currAssmt;
-                std::cout << "fassigned is empty." << std::endl;
                 return true;
             }
             if (fassigned.hasEmptyClause()) {
@@ -508,8 +523,8 @@ public:
             if (varNextInd <= varList.size()) {
 
                 // Explore each possible true/false assignment for this variable.
-                std::map<std::string, bool> tAssign(currNode._assmt);
-                std::map<std::string, bool> fAssign(currNode._assmt);
+                std::map<std::string, bool> tAssign(currAssmt);
+                std::map<std::string, bool> fAssign(currAssmt);
 
                 tAssign.insert(std::make_pair(currNode._currVar, true));
                 fAssign.insert(std::make_pair(currNode._currVar, false));
@@ -532,90 +547,3 @@ public:
         return false;
     }
 };
-
-
-int main(int argc, char const* argv[]) {
-    auto l1 = Literal("~x");
-    auto l2 = Literal("y");
-    std::cout << l1.toString() << std::endl;
-    std::cout << l2.toString() << std::endl;
-
-    auto c1 = Clause({l1, l2});
-    auto c2 = Clause({l1});
-    std::cout << c1.toString() << std::endl;
-    std::cout << c2.toString() << std::endl;
-
-    // (x \/ y) /\ (~y \/ ~z)
-    auto lx = Literal("x");
-    auto ly = Literal("y");
-    auto lny = Literal("~y");
-    auto lnz = Literal("~z");
-
-    auto cxy = Clause({lx, ly});
-    auto cynz = Clause({lny, lnz});
-    auto fa = CNF({cxy, cynz});
-
-    std::map<std::string, bool> ax1 = {{"x", true}, {"y", false}};
-    std::map<std::string, bool> ax0y1z1 = {{"x", false}, {"y", true}, {"z", true}};
-    std::cout << "fa: " << fa.toString() << std::endl;
-    std::cout << "fa (x=1): " << fa.assign(ax1).toString() << std::endl;
-    std::cout << "fa (x0y1z1): " << fa.assign(ax0y1z1).toString() << std::endl;
-    std::cout << "fa (x0y1z1) false: " << fa.assign(ax0y1z1).isFalse() << std::endl;
-
-
-    Solver solver = Solver();
-    auto ret = solver.isSat(fa);
-    std::cout << "fa isSat: " << ret << std::endl;
-    std::cout << "fa assignment: " << assignmentToString(solver.getAssignment()) << std::endl;
-
-
-    auto a1 = solver.getAssignment();
-    auto ret1 = fa.assign(a1);
-    std::cout << "fa:" << ret1.toString() << std::endl;
-    std::cout << "fa true:" << ret1.isTrue() << std::endl;
-
-    //
-    // Preliminary test cases.
-    //
-
-    CNF ct1 = CNF({{"x", "y"}, {"~y"}});
-    CNF ct2 = CNF({{"x", "y"}, {"~x"}});
-    CNF ct3 = CNF({{"x"}, {"~x"}});
-    CNF ct4 = CNF({{"x", "y"}, {"x", "~y"}, {"~x", "y"}, {"~x", "~y"}});
-
-    assert(solver.isSatBruteForce(ct1));
-    assert(solver.isSatBruteForce(ct2));
-    assert(!solver.isSatBruteForce(ct3));
-    assert(!solver.isSatBruteForce(ct4));
-
-    assert(solver.isSatBruteForce(ct1) == solver.isSat(ct1));
-    assert(solver.isSatBruteForce(ct2) == solver.isSat(ct2));
-    assert(solver.isSatBruteForce(ct3) == solver.isSat(ct3));
-    assert(solver.isSatBruteForce(ct4) == solver.isSat(ct4));
-
-    auto d1 = ct4.toDIMACS();
-    std::cout << d1;
-
-    // Generate random CNF SAT formulas.
-    srand(time(NULL));
-
-    int niters = 5;
-    for (int k = 0; k < niters; k++) {
-        int nclauses = 40;
-        int nvars = 8;
-        int clause_size = 3;
-        auto cf = CNF::randomCNF(nclauses, nvars, clause_size);
-        std::cout << cf.toString() << std::endl;
-        auto retOracle = solver.isSatBruteForce(cf);
-        assert(retOracle == solver.isSat(cf));
-        std::cout << "Result: " << (retOracle ? "SAT" : "UNSAT") << std::endl;
-        std::cout << cf.toDIMACS() << std::endl;
-    }
-
-    CNF t1 = CNF({{"x", "y", "z"}, {"z"}});
-    std::cout << "t1: " << t1.toString() << std::endl;
-    auto t1p = t1.unitPropagate(Literal("z"));
-    std::cout << "t1p: " << t1p.toString() << std::endl;
-
-    return 0;
-}
