@@ -345,6 +345,10 @@ public:
         return outStr;
     }
 
+    static CNF fromDIMACS(){
+        // TODO: Parse DIMACS CNF instances.
+    }
+
     /**
      * Evaluate a CNF given a full (non partial) assignment.
      */
