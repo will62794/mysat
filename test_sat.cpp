@@ -1,4 +1,8 @@
 #include "sat.cpp"
+#include <chrono>
+
+using namespace std;
+using namespace std::chrono;
 
 /**
  * Test that the output of the fast/optimized SAT solver implementation matches
@@ -96,12 +100,18 @@ int main(int argc, char const* argv[]) {
     //
     // testConformanceRandomCNF(int niters, int nclauses, int nvars, int clause_size)
     //
+    auto start = high_resolution_clock::now();
     testConformanceRandomCNF(50, 1, 2, 2);
     testConformanceRandomCNF(50, 2, 2, 2);
     testConformanceRandomCNF(50, 2, 3, 2);
     testConformanceRandomCNF(50, 4, 4, 2);
-    testConformanceRandomCNF(100, 8, 4, 2);
-    testConformanceRandomCNF(100, 16, 8, 4);
+    testConformanceRandomCNF(50, 8, 4, 2);
+    testConformanceRandomCNF(50, 16, 8, 4);
+    testConformanceRandomCNF(100, 50, 10, 4);
+
+    auto stop = high_resolution_clock::now();
+    auto durationMS = duration_cast<milliseconds>(stop - start);
+    std::cout << "ran conformance checking in " << durationMS.count() << "ms" << std::endl;
 
     CNF t1 = CNF({{"x", "y", "z"}, {"z"}});
     std::cout << "t1: " << t1.toString() << std::endl;

@@ -512,6 +512,8 @@ private:
     // a record of the path in the tree it visited during solving.
     std::set<TreeEdge> terminationTree;
 
+    bool enableUnitPropagation = true;
+
 public:
     Solver() {}
 
@@ -596,16 +598,19 @@ public:
             CNF fassigned = currF.assign(currAssmt);
             std::cout << "f after assignment: " << fassigned.toString() << std::endl;
 
-            // Close the formula under unit resolution.
-            while (fassigned.hasUnitClause()) {
-                auto unitLit = fassigned.getUnitLiteral();
-                // Assign the unit literal's variable to truthify the unit clause
-                // and simplify the formula based on this assignment.
-                currAssmt.set(unitLit.getVarName(), !unitLit.isNegated());
-                fassigned = fassigned.unitPropagate(unitLit);
+            // Close the formula under unit resolution, if enabled.
+            if (enableUnitPropagation) {
+                while (fassigned.hasUnitClause()) {
+                    auto unitLit = fassigned.getUnitLiteral();
+                    // Assign the unit literal's variable to truthify the unit clause
+                    // and simplify the formula based on this assignment.
+                    currAssmt.set(unitLit.getVarName(), !unitLit.isNegated());
+                    fassigned = fassigned.unitPropagate(unitLit);
+                }
+                std::cout << "f after unit prop: " << fassigned.toString() << std::endl;
+                std::cout << "curr assignment after unit prop: " << currAssmt.toString()
+                          << std::endl;
             }
-            std::cout << "f after unit prop: " << fassigned.toString() << std::endl;
-            std::cout << "curr assignment after unit prop: " << currAssmt.toString() << std::endl;
 
             if (fassigned.isEmpty()) {
                 // If we determined that the formula is necessarily satisfiable
