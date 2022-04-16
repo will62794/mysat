@@ -7,8 +7,8 @@
  */
 void testConformanceRandomCNF(int niters, int nclauses, int nvars, int clause_size) {
     srand(33);
-    Solver solver = Solver();
     for (int k = 0; k < niters; k++) {
+        Solver solver = Solver();
         auto randf = CNF::randomCNF(nclauses, nvars, clause_size);
         std::cout << "- random CNF: " << randf.toString() << std::endl;
         auto retOracle = solver.isSatBruteForce(randf);
@@ -20,6 +20,8 @@ void testConformanceRandomCNF(int niters, int nclauses, int nvars, int clause_si
         if (retImpl) {
             assert(randf.eval(solver.getAssignment()));
         }
+
+        solver.printTerminationTree();
 
         // std::cout << "Result: " << (retOracle ? "SAT" : "UNSAT") << std::endl;
         // std::cout << randf.toDIMACS() << std::endl;

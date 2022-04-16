@@ -42,6 +42,11 @@ public:
         _vals.insert(std::make_pair(varName, val));
     }
 
+    void unset(std::string varName) {
+        auto it = _vals.find(varName);
+        _vals.erase(it);
+    }
+
     std::string toString() {
         if (_vals.size() == 0) {
             return "{}";
@@ -54,6 +59,20 @@ public:
             outStr += " ";
         }
         return outStr + "}";
+    }
+
+    std::string toStringCompact() {
+        if (_vals.size() == 0) {
+            return "";
+        }
+        std::string outStr = "";
+        for (auto it = _vals.begin(); it != _vals.end(); it++) {
+            // outStr += it->first;
+            // outStr += "_";
+            outStr += (it->second ? "1" : "0");
+            outStr += "";
+        }
+        return outStr;
     }
 };
 
@@ -434,16 +453,51 @@ public:
     CNF _f;
     // Current variable node.
     std::string _currVar;
+    std::string _parentVar;
     // Index of the variable in a given variable ordering.
     int _currVarInd;
     // Current partial assignment.
     Assignment _assmt;
+    Assignment _parentAssmt;
 
-    Context(CNF f, std::string currVar, int currVarInd, Assignment assmt) {
+    Context() {
+        _currVar = "";
+        _parentVar = "";
+    }
+
+    Context(CNF f,
+            std::string currVar,
+            std::string parentVar,
+            int currVarInd,
+            Assignment assmt,
+            Assignment parentAssmt) {
         _f = f;
         _currVar = currVar;
+        _parentVar = parentVar;
         _currVarInd = currVarInd;
         _assmt = assmt;
+        _parentAssmt = parentAssmt;
+    }
+};
+
+// Termination tree edge.
+class TreeEdge {
+public:
+    std::string from;
+    std::string to;
+    std::string fromid;
+    std::string toid;
+
+    TreeEdge(std::string f, std::string t, std::string ida, std::string idb) {
+        from = f;
+        to = t;
+        fromid = ida;
+        toid = idb;
+    }
+
+    bool operator<(const TreeEdge& other) const {
+        return std::make_tuple(other.from, other.to, other.fromid, other.toid) <
+            std::make_tuple(from, to, fromid, toid);
     }
 };
 
@@ -454,11 +508,24 @@ class Solver {
 private:
     Assignment _currAssignment;
 
+    // Records the termination tree of the SAT solver execution i.e.
+    // a record of the path in the tree it visited during solving.
+    std::set<TreeEdge> terminationTree;
+
 public:
     Solver() {}
 
     Assignment getAssignment() {
         return _currAssignment;
+    }
+
+    void printTerminationTree() {
+        std::cout << "termination tree:" << std::endl;
+        for (auto e : terminationTree) {
+            std::cout << "\"" << e.from + " | " + e.fromid << "\" -> \"" << e.to + " | " + e.toid
+                      << "\"" << std::endl;
+        }
+        std::cout << "===" << std::endl;
     }
 
     bool _isSatBruteForceRec(CNF f,
@@ -500,16 +567,28 @@ public:
         std::vector<Context> frontier;
 
         std::map<std::string, bool> initVals;
-        frontier.push_back(Context(f, varList.at(0), 0, initVals));
+        frontier.push_back(Context(f, varList.at(0), "root", 0, initVals, {}));
+
+        Context lastNode = Context();
 
         // Explore all possible assignments in a depth first manner.
         while (frontier.size() > 0) {
             Context currNode = frontier.back();
             frontier.pop_back();
 
-            std::cout << "currVar: '" << currNode._currVar << "', varInd=" << currNode._currVarInd
-                      << std::endl;
+            std::cout << "* currVar: '" << currNode._currVar << "', varInd=" << currNode._currVarInd
+                      << ", parentVar: " << currNode._parentVar << std::endl;
+            std::cout << "parentVar: " << currNode._parentVar << std::endl;
             std::cout << "curr assignment: " << currNode._assmt.toString() << std::endl;
+            std::cout << "par assignment: " << currNode._parentAssmt.toString() << std::endl;
+
+            // Record information for termination tree.
+            auto localCurrAssmt = currNode._assmt;
+            TreeEdge e = TreeEdge(currNode._parentVar,
+                                  currNode._currVar,
+                                  currNode._parentAssmt.toStringCompact(),
+                                  currNode._assmt.toStringCompact());
+            terminationTree.insert(e);
 
             // Reduce based on current assignment.
             auto currAssmt = currNode._assmt;
@@ -546,6 +625,7 @@ public:
                 // Current assignment is necessarily UNSAT, so no need to
                 // explore further down this branch.
                 std::cout << "fassigned has empty clause." << std::endl;
+                lastNode = currNode;
                 continue;
             }
 
@@ -569,12 +649,15 @@ public:
                 // tree.
                 auto nextVar = varNextInd == varList.size() ? "LEAF" : varList.at(varNextInd);
 
-                Context tctx(fassigned, nextVar, varNextInd, tAssign);
-                Context fctx(fassigned, nextVar, varNextInd, fAssign);
+                std::string parentVar = currNode._currVar;
+                Context tctx(fassigned, nextVar, parentVar, varNextInd, tAssign, currNode._assmt);
+                Context fctx(fassigned, nextVar, parentVar, varNextInd, fAssign, currNode._assmt);
 
                 frontier.push_back(tctx);
                 frontier.push_back(fctx);
             }
+
+            lastNode = currNode;
         }
 
         return false;
