@@ -345,7 +345,7 @@ public:
         return outStr;
     }
 
-    static CNF fromDIMACS(){
+    static CNF fromDIMACS() {
         // TODO: Parse DIMACS CNF instances.
     }
 
@@ -484,24 +484,45 @@ public:
     }
 };
 
+class TreeNode {
+public:
+    std::string name;
+    std::string id;
+    std::string currF;
+    TreeNode() {}
+    TreeNode(std::string f, std::string i, std::string cf) {
+        name = f;
+        id = i;
+        currF = cf;
+    }
+    bool operator<(const TreeNode& other) const {
+        return std::make_tuple(other.name, other.id, other.currF) <
+            std::make_tuple(name, id, currF);
+    }
+
+    std::string getDOTId() {
+        return name + " | (" + id + ") | " + currF;
+    }
+};
+
 // Termination tree edge.
 class TreeEdge {
 public:
-    std::string from;
-    std::string to;
-    std::string fromid;
-    std::string toid;
+    TreeNode from;
+    TreeNode to;
 
-    TreeEdge(std::string f, std::string t, std::string ida, std::string idb) {
+    TreeEdge(TreeNode f, TreeNode t) {
         from = f;
         to = t;
-        fromid = ida;
-        toid = idb;
+    }
+
+    TreeEdge(std::string f, std::string t, std::string ida, std::string idb) {
+        from = TreeNode(f, ida, "");
+        to = TreeNode(t, idb, "");
     }
 
     bool operator<(const TreeEdge& other) const {
-        return std::make_tuple(other.from, other.to, other.fromid, other.toid) <
-            std::make_tuple(from, to, fromid, toid);
+        return std::make_tuple(from, to) < std::make_tuple(other.from, other.to);
     }
 };
 
@@ -525,11 +546,15 @@ public:
         return _currAssignment;
     }
 
+    void addTerminationEdge(TreeEdge e) {
+        terminationTree.insert(e);
+    }
+
     void printTerminationTree() {
         std::cout << "termination tree:" << std::endl;
         for (auto e : terminationTree) {
-            std::cout << "\"" << e.from + " | " + e.fromid << "\" -> \"" << e.to + " | " + e.toid
-                      << "\"" << std::endl;
+            std::cout << "\"" << e.from.getDOTId() << "\" -> \"" << e.to.getDOTId() << "\""
+                      << std::endl;
         }
         std::cout << "===" << std::endl;
     }
@@ -588,14 +613,6 @@ public:
             std::cout << "curr assignment: " << currNode._assmt.toString() << std::endl;
             std::cout << "par assignment: " << currNode._parentAssmt.toString() << std::endl;
 
-            // Record information for termination tree.
-            auto localCurrAssmt = currNode._assmt;
-            TreeEdge e = TreeEdge(currNode._parentVar,
-                                  currNode._currVar,
-                                  currNode._parentAssmt.toStringCompact(),
-                                  currNode._assmt.toStringCompact());
-            terminationTree.insert(e);
-
             // Reduce based on current assignment.
             auto currAssmt = currNode._assmt;
             CNF currF = currNode._f;
@@ -615,6 +632,16 @@ public:
                 std::cout << "curr assignment after unit prop: " << currAssmt.toString()
                           << std::endl;
             }
+
+            // Record information for termination tree.
+            auto localCurrAssmt = currNode._assmt;
+            auto from = TreeNode(currNode._parentVar,
+                                 currNode._parentAssmt.toStringCompact(),
+                                 currNode._f.toString());
+            auto to = TreeNode(
+                currNode._currVar, currNode._assmt.toStringCompact(), fassigned.toString());
+            TreeEdge e = TreeEdge(from, to);
+            terminationTree.insert(e);
 
             if (fassigned.isEmpty()) {
                 // If we determined that the formula is necessarily satisfiable
@@ -665,7 +692,6 @@ public:
                 // TODO: Order of true/false exploration could be chosen differently or dynamically.
                 frontier.push_back(fctx);
                 frontier.push_back(tctx);
-
             }
 
             lastNode = currNode;
