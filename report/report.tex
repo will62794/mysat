@@ -25,14 +25,14 @@ The overall goal is to implement a CDCL based  SAT solver in C++ that accepts in
 Completed milestones:
 
 \begin{itemize}
-    \item Basic working DPLL SAT solver implementation with unit resolution
-    \item Test harness that checks correctness of solver implementation on randomly generated CNF formulas against brute force SAT solving method
-    \item Visualization of termination tree (i.e. search tree) as DOT graph
+    \item Basic working DPLL SAT solver implementation with unit resolution. Current source code \href{https://github.com/will62794/mysat}{here}.
+    \item Test harness that checks correctness of solver implementation on randomly generated CNF formulas against brute force SAT solving method.
+    \item Visualization of termination tree (i.e. search tree) as DOT graph.
 \end{itemize}
 Remaining work items:
 \begin{itemize}
     \item Implement conflict driven clause learning (CDCL) on top of the basic DPLL backtracking algorithm.
-    \item Implement ability to generate ceritifcates of unsatisfiability via resolution proofs. We plan to generate proofs based on the RUP (Reverse Unit Propagation) format \cite{goldberg03,heule13}.
+    \item Implement ability to generate certificates of unsatisfiability. We plan to generate unsat proofs based on the RUP (Reverse Unit Propagation) format \cite{goldberg03,heule13}.
     \item Use the DRAT-trim checker tool to test the correctness of our unsat proofs \cite{drattrimtool}.
     \item Evaluate our CDCL SAT solver implementation on varied benchmark set and compare its performance to Kissat\cite{2020kissat}, which won the main track of SAT 2020 competition.
     % We will use the DRAT-trim checker tool to verify the correctness of our proofs.
