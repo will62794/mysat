@@ -662,8 +662,10 @@ public:
                 Context tctx(fassigned, nextVar, parentVar, varNextInd, tAssign, currNode._assmt);
                 Context fctx(fassigned, nextVar, parentVar, varNextInd, fAssign, currNode._assmt);
 
-                frontier.push_back(tctx);
+                // TODO: Order of true/false exploration could be chosen differently or dynamically.
                 frontier.push_back(fctx);
+                frontier.push_back(tctx);
+
             }
 
             lastNode = currNode;
