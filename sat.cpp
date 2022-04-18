@@ -347,6 +347,7 @@ public:
 
     static CNF fromDIMACS() {
         // TODO: Parse DIMACS CNF instances.
+        return CNF();
     }
 
     /**
