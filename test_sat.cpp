@@ -32,7 +32,7 @@ void testConformanceRandomCNF(int niters, int nclauses, int nvars, int clause_si
     }
 }
 
-int main(int argc, char const* argv[]) {
+void scratchTest() {
     auto l1 = Literal("~x");
     auto l2 = Literal("y");
     std::cout << l1.toString() << std::endl;
@@ -93,13 +93,29 @@ int main(int argc, char const* argv[]) {
 
     auto d1 = ct4.toDIMACS();
     std::cout << d1;
+}
 
-    //
-    // Randomized conformance checking, with checking correctness
-    // of smaller formulas first.
-    //
-    // testConformanceRandomCNF(int niters, int nclauses, int nvars, int clause_size)
-    //
+void testSimple1() {
+    Solver solver = Solver();
+    CNF ct1 = CNF({{"~x", "y"}, {"~y", "z"}});
+    assert(solver.isSatBruteForce(ct1) == solver.isSat(ct1));
+    solver.printTerminationTree();
+}
+
+void testSimple2() {
+    Solver solver = Solver();
+    CNF ct1 = CNF({{"~a", "b"}, {"~b", "~c"}, {"c", "~d"}});
+    assert(solver.isSatBruteForce(ct1) == solver.isSat(ct1));
+    solver.printTerminationTree();
+}
+
+//
+// Randomized conformance checking, with checking correctness
+// of smaller formulas first.
+//
+// testConformanceRandomCNF(int niters, int nclauses, int nvars, int clause_size)
+//
+void testConformance() {
     auto start = high_resolution_clock::now();
     testConformanceRandomCNF(50, 1, 2, 2);
     testConformanceRandomCNF(50, 2, 2, 2);
@@ -112,11 +128,19 @@ int main(int argc, char const* argv[]) {
     auto stop = high_resolution_clock::now();
     auto durationMS = duration_cast<milliseconds>(stop - start);
     std::cout << "ran conformance checking in " << durationMS.count() << "ms" << std::endl;
+}
 
-    CNF t1 = CNF({{"x", "y", "z"}, {"z"}});
-    std::cout << "t1: " << t1.toString() << std::endl;
-    auto t1p = t1.unitPropagate(Literal("z"));
-    std::cout << "t1p: " << t1p.toString() << std::endl;
+int main(int argc, char const* argv[]) {
+
+    testSimple1();
+    testSimple2();
+
+    testConformance();
+
+    // CNF t1 = CNF({{"x", "y", "z"}, {"z"}});
+    // std::cout << "t1: " << t1.toString() << std::endl;
+    // auto t1p = t1.unitPropagate(Literal("z"));
+    // std::cout << "t1p: " << t1p.toString() << std::endl;
 
     return 0;
 }

@@ -502,7 +502,7 @@ public:
     }
 
     std::string getDOTId() {
-        return name + " | (" + id + ") | " + currF;
+        return name + " | " + id + " | " + currF;
     }
 };
 
@@ -539,6 +539,7 @@ private:
     std::set<TreeEdge> terminationTree;
 
     bool enableUnitPropagation = true;
+    bool recordTerminationTree = true;
 
 public:
     Solver() {}
@@ -634,15 +635,18 @@ public:
                           << std::endl;
             }
 
-            // Record information for termination tree.
-            auto localCurrAssmt = currNode._assmt;
-            auto from = TreeNode(currNode._parentVar,
-                                 currNode._parentAssmt.toStringCompact(),
-                                 currNode._f.toString());
-            auto to = TreeNode(
-                currNode._currVar, currNode._assmt.toStringCompact(), fassigned.toString());
-            TreeEdge e = TreeEdge(from, to);
-            terminationTree.insert(e);
+            // Record information for termination tree if enabled.
+            // Mostly for debugging/visualization.
+            if (recordTerminationTree) {
+                auto localCurrAssmt = currNode._assmt;
+                auto from = TreeNode(currNode._parentVar,
+                                     currNode._parentAssmt.toStringCompact(),
+                                     currNode._f.toString());
+                auto to = TreeNode(
+                    currNode._currVar, currNode._assmt.toStringCompact(), fassigned.toString());
+                TreeEdge e = TreeEdge(from, to);
+                terminationTree.insert(e);
+            }
 
             if (fassigned.isEmpty()) {
                 // If we determined that the formula is necessarily satisfiable
