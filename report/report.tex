@@ -1,0 +1,52 @@
+\documentclass[12pt]{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{hyperref}
+
+\begin{document}
+
+\title{CS 7240 Intermediate Project Report: CDCL SAT Solver Implementation}
+\author{William Schultz}
+\date{\today}
+
+\maketitle
+
+\section{Overview}
+
+Satisfiability (SAT) solvers have become immensely powerful tools for solving hard, generic constraint satisfaction problems. Even though the SAT problem is known to be fundamentally hard (NP-complete), these tools are now effective at solving large, nontrivial real world problem instances and are applied widely in hardware and software verification, program analysis, electronic design automation, etc. The goal for this project will be to implement a SAT solver based on relatively state of the art techniques, which are mostly based on \textit{conflict driven clause learning} (CDCL) \cite{09bieresathandbook, bierecdcl,96sakallah}, an extension of the foundational DPLL algorithm \cite{1960dpll}. The goal is to implement the solver and compare its performance to other state of the art solvers.
+
+\section{Project Details}
+
+The overall goal is to implement a CDCL based  SAT solver in C++ that accepts input in DIMACS CNF format \cite{dimacsCNF}. At a high level a SAT solver takes in a boolean formula $F$ in \textit{conjunctive normal form (CNF)} and returns a result of either \textit{sat}, along with a satisfying assignment that makes the given formula true, or \textit{unsat}, meaning no such assignment exists. In the case that the formula is satisfiable and a satisfying assignment is returned, it is easy to verify whether this result is correct. If a result of \textit{unsat} is returned, though, it may still be desirable to check the validity of this result. So, most modern solvers also return a refutation of $F$ which can be independently verified. This can be returned in the form of a resolution refutation \cite{2012benarilogic} proof. Our goal will be to also produce such proofs in the case that $F$ is unsatisfiable. We will aim to base our implementation and algorithms off of the treatments found in \cite{09bieresathandbook}.
+
+\subsection*{Progress Report (April 19, 2022)}
+
+Completed milestones:
+
+\begin{itemize}
+    \item Basic working DPLL SAT solver implementation with unit resolution
+    \item Test harness that checks correctness of solver implementation on randomly generated CNF formulas against brute force SAT solving method
+    \item Visualization of termination tree (i.e. search tree) as DOT graph
+\end{itemize}
+Remaining work items:
+\begin{itemize}
+    \item Implement conflict driven clause learning (CDCL) on top of the basic DPLL backtracking algorithm.
+    \item Implement ability to generate ceritifcates of unsatisfiability via resolution proofs. We plan to generate proofs based on the RUP (Reverse Unit Propagation) format \cite{goldberg03}.
+    \item Evaluate our CDCL SAT solver implemtnation on benchmark set and compare its performance to Kissat, which won the main track of SAT 2020 competition.
+    % We will use the DRAT-trim checker tool to verify the correctness of our proofs.
+\end{itemize}
+
+% \begin{itemize}
+%     \item Parse CNF format
+%     \item Implement in C++
+%     \item Use CDCL based SAT algorithm.
+% \end{itemize}
+
+\section{Evaluation Plan}
+We will evaluate our solver's performance on a standard set of SAT benchmarks and compare with other state of the art solvers, drawing from winners of the recent SAT 2020 competitions \cite{2020satresults}. The solvers \textit{kissat}\cite{2020kissat}, \textit{cryptominisat} \cite{09cryptominisat}, and \textit{minisat}\cite{minisat} seem to be good targets to compare against. The SAT 2020 competition publishes the benchmarks used for the competition \cite{sat2020benchmarks}, so we plan to use these as a starting point for evaluation. If all of these are too hard for our solver, though, then we can resort to some other, hand generated benchmarks, or another set of various CNF benchmarks hosted at \cite{dimacsCNF}.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}
