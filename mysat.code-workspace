@@ -74,7 +74,14 @@
             "fstream": "cpp",
             "deque": "cpp",
             "iomanip": "cpp",
-            "stack": "cpp"
+            "stack": "cpp",
+            "codecvt": "cpp",
+            "condition_variable": "cpp",
+            "csignal": "cpp",
+            "list": "cpp",
+            "queue": "cpp",
+            "thread": "cpp",
+            "unordered_set": "cpp"
         }
     }
 }

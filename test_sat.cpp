@@ -172,18 +172,18 @@ void testCNF(std::string cnfFile, bool expectSat) {
 
 int main(int argc, char const* argv[]) {
 
-    // Set logging configuration.
-    el::Configurations defaultConf;
-    defaultConf.setToDefault();
-    defaultConf.set(el::Level::Info, el::ConfigurationType::Format, "%datetime %level %msg");
-    el::Loggers::reconfigureLogger("default", defaultConf);
-
     testSimple1();
     testSimple2();
 
-    // testDIMACSParse();
+    testDIMACSParse();
 
-    // testCNF("benchmarks/cnf_samples/aim-50-1_6-yes1-4.cnf", true);
+    // Turn off debug level here.
+    el::Configurations defaultConf;
+    defaultConf.setToDefault();
+    defaultConf.set(el::Level::Debug, el::ConfigurationType::Enabled, "false");
+    el::Loggers::reconfigureLogger("default", defaultConf);
+
+    testCNF("benchmarks/cnf_samples/aim-50-1_6-yes1-4.cnf", true);
 
     // testConformance();
 

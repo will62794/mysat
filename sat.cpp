@@ -727,13 +727,13 @@ public:
             if (fassigned.hasEmptyClause()) {
                 // Current assignment is necessarily UNSAT, so no need to
                 // explore further down this branch.
-                std::cout << "fassigned has empty clause." << std::endl;
+                LOG(DEBUG) << "fassigned has empty clause.";
                 lastNode = currNode;
                 continue;
             }
 
             int varNextInd = currNode._currVarInd + 1;
-            std::cout << "varNextInd: " << varNextInd << std::endl;
+            LOG(DEBUG) << "varNextInd: " << varNextInd;
 
             // Check if we reached the last variable i.e. a leaf.
             if (varNextInd <= varList.size()) {
