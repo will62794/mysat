@@ -155,9 +155,7 @@ void testCNF(std::string cnfFile, bool expectSat) {
     auto ret = solver.isSat(f);
     auto stop = high_resolution_clock::now();
 
-    if (expectSat) {
-        assert(ret);
-    }
+    assert(ret == expectSat);
 
     auto durationMS = duration_cast<milliseconds>(stop - start);
     std::cout << "Checked CNF file '" << cnfFile << "' in " << durationMS.count() << "ms"
@@ -184,6 +182,11 @@ int main(int argc, char const* argv[]) {
     el::Loggers::reconfigureLogger("default", defaultConf);
 
     testCNF("benchmarks/cnf_samples/aim-50-1_6-yes1-4.cnf", true);
+
+    // Still quite slow with current implementation.
+    testCNF("benchmarks/cnf_samples/par8-1-c.cnf", true);
+    testCNF("benchmarks/cnf_samples/aim-100-1_6-no-1.cnf", false);
+    testCNF("benchmarks/cnf_samples/dubois20.cnf", false);
 
     // testConformance();
 
