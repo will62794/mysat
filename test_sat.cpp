@@ -1,5 +1,8 @@
 #include "sat.cpp"
 #include <chrono>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 
 using namespace std;
 using namespace std::chrono;
@@ -130,12 +133,25 @@ void testConformance() {
     std::cout << "ran conformance checking in " << durationMS.count() << "ms" << std::endl;
 }
 
+void testDIMACSParse() {
+    std::string dimacsCNFStr;
+    std::string fname = "benchmarks/cnf_samples/simple_v3_c2.cnf";
+    std::ifstream t(fname);
+    std::stringstream buffer;
+    buffer << t.rdbuf();
+    dimacsCNFStr = buffer.str();
+    CNF f = CNF::fromDIMACS(dimacsCNFStr);
+    assert(f.toString() == "{ (x1 | ~x3) & (x2 | x3 | ~x1) }");
+}
+
 int main(int argc, char const* argv[]) {
 
     testSimple1();
     testSimple2();
 
-    testConformance();
+    testDIMACSParse();
+
+    // testConformance();
 
     // CNF t1 = CNF({{"x", "y", "z"}, {"z"}});
     // std::cout << "t1: " << t1.toString() << std::endl;

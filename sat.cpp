@@ -4,6 +4,18 @@
 #include <set>
 #include <vector>
 
+std::vector<std::string> split(std::string const& str, std::string delim) {
+    std::vector<std::string> out;
+    size_t start;
+    size_t end = 0;
+
+    while ((start = str.find_first_not_of(delim, end)) != std::string::npos) {
+        end = str.find(delim, start);
+        out.push_back(str.substr(start, end - start));
+    }
+    return out;
+}
+
 /**
  * A (potentially partial) assignment of values to variables of a CNF formula.
  */
@@ -345,9 +357,55 @@ public:
         return outStr;
     }
 
-    static CNF fromDIMACS() {
-        // TODO: Parse DIMACS CNF instances.
-        return CNF();
+    static CNF fromDIMACS(std::string dimacsStr) {
+        int nvars;
+        int nclauses;
+        std::vector<Clause> allClauses;
+        bool parsedProblemLine = false;
+
+        auto lines = split(dimacsStr, "\n");
+        for (auto line : lines) {
+            // Comment line.
+            if (line.at(0) == 'c') {
+                continue;
+            }
+            // Problem line.
+            // p cnf <num_vars> <num_clauses>
+            else if (line.at(0) == 'p') {
+                std::cout << "problem line: " << line << std::endl;
+                auto args = split(line, " ");
+                assert(args[0] == "p");
+                assert(args[1] == "cnf");  // Must be CNF type.
+                nvars = stoi(args[2]);
+                nclauses = stoi(args[3]);
+                parsedProblemLine = true;
+            }
+            // Read another clause line.
+            else if (parsedProblemLine) {
+                // Assume all clause vars are on same line for now.
+                std::vector<std::string> clauseVars = split(line, " ");
+                std::vector<Literal> clauseLits;
+                for (auto cvar : clauseVars) {
+                    if (cvar == "0") {
+                        // Clauses are terminated by a zero, which is not
+                        // considered as a variable in the clause.
+                        break;
+                    }
+
+                    // Minus sign is used to indicate a negated variable.
+                    std::string varPrefix = "x";
+                    if (cvar.at(0) == '-') {
+                        bool neg = true;
+                        clauseLits.push_back(Literal(varPrefix + cvar.substr(1), neg));
+                    } else {
+                        clauseLits.push_back(Literal(varPrefix + cvar));
+                    }
+                }
+                Clause newClause = Clause(clauseLits);
+                allClauses.push_back(newClause);
+            }
+        }
+        return CNF(allClauses);
     }
 
     /**
