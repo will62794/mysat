@@ -144,12 +144,40 @@ void testDIMACSParse() {
     assert(f.toString() == "{ (x1 | ~x3) & (x2 | x3 | ~x1) }");
 }
 
+void testCNF(std::string cnfFile, bool expectSat) {
+    std::ifstream t(cnfFile);
+    std::stringstream buffer;
+    buffer << t.rdbuf();
+    CNF f = CNF::fromDIMACS(buffer.str());
+
+    Solver solver = Solver();
+    auto start = high_resolution_clock::now();
+    auto ret = solver.isSat(f);
+    auto stop = high_resolution_clock::now();
+
+    if (expectSat) {
+        assert(ret);
+    }
+
+    auto durationMS = duration_cast<milliseconds>(stop - start);
+    std::cout << "Checked CNF file '" << cnfFile << "' in " << durationMS.count() << "ms"
+              << std::endl;
+
+    // If the formula was satisfiable, test that the discovered satisfying
+    // assignment is correct.
+    if (ret) {
+        assert(f.eval(solver.getAssignment()));
+    }
+}
+
 int main(int argc, char const* argv[]) {
 
     testSimple1();
     testSimple2();
 
-    testDIMACSParse();
+    // testDIMACSParse();
+
+    // testCNF("benchmarks/cnf_samples/aim-50-1_6-yes1-4.cnf", true);
 
     // testConformance();
 

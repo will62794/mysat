@@ -4,6 +4,10 @@
 #include <set>
 #include <vector>
 
+#include "easylogging++.h"
+
+INITIALIZE_EASYLOGGINGPP
+
 std::vector<std::string> split(std::string const& str, std::string delim) {
     std::vector<std::string> out;
     size_t start;
@@ -372,7 +376,6 @@ public:
             // Problem line.
             // p cnf <num_vars> <num_clauses>
             else if (line.at(0) == 'p') {
-                std::cout << "problem line: " << line << std::endl;
                 auto args = split(line, " ");
                 assert(args[0] == "p");
                 assert(args[1] == "cnf");  // Must be CNF type.
@@ -405,6 +408,7 @@ public:
                 allClauses.push_back(newClause);
             }
         }
+        assert(allClauses.size() == nclauses);
         return CNF(allClauses);
     }
 
@@ -650,7 +654,7 @@ public:
     }
 
     bool isSat(CNF f) {
-        std::cout << "# checking isSat # " << std::endl;
+        LOG(DEBUG) << "checking isSat";
 
         std::vector<std::string> varList = f.getVariableList();
 
@@ -667,17 +671,18 @@ public:
             Context currNode = frontier.back();
             frontier.pop_back();
 
-            std::cout << "* currVar: '" << currNode._currVar << "', varInd=" << currNode._currVarInd
-                      << ", parentVar: " << currNode._parentVar << std::endl;
-            std::cout << "parentVar: " << currNode._parentVar << std::endl;
-            std::cout << "curr assignment: " << currNode._assmt.toString() << std::endl;
-            std::cout << "par assignment: " << currNode._parentAssmt.toString() << std::endl;
+            LOG(DEBUG) << "* currVar: '" << currNode._currVar
+                       << "', varInd=" << currNode._currVarInd
+                       << ", parentVar: " << currNode._parentVar;
+            LOG(DEBUG) << "parentVar: " << currNode._parentVar;
+            LOG(DEBUG) << "curr assignment: " << currNode._assmt.toString();
+            LOG(DEBUG) << "par assignment: " << currNode._parentAssmt.toString();
 
             // Reduce based on current assignment.
             auto currAssmt = currNode._assmt;
             CNF currF = currNode._f;
             CNF fassigned = currF.assign(currAssmt);
-            std::cout << "f after assignment: " << fassigned.toString() << std::endl;
+            LOG(DEBUG) << "f after assignment: " << fassigned.toString();
 
             // Close the formula under unit resolution, if enabled.
             if (enableUnitPropagation) {
@@ -688,9 +693,8 @@ public:
                     currAssmt.set(unitLit.getVarName(), !unitLit.isNegated());
                     fassigned = fassigned.unitPropagate(unitLit);
                 }
-                std::cout << "f after unit prop: " << fassigned.toString() << std::endl;
-                std::cout << "curr assignment after unit prop: " << currAssmt.toString()
-                          << std::endl;
+                LOG(DEBUG) << "f after unit prop: " << fassigned.toString();
+                LOG(DEBUG) << "curr assignment after unit prop: " << currAssmt.toString();
             }
 
             // Record information for termination tree if enabled.
