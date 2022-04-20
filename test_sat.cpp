@@ -185,7 +185,7 @@ int main(int argc, char const* argv[]) {
     defaultConf.set(el::Level::Debug, el::ConfigurationType::Enabled, "false");
     el::Loggers::reconfigureLogger("default", defaultConf);
 
-    // testCNF("benchmarks/cnf_samples/aim-50-1_6-yes1-4.cnf", true);
+    testCNF("benchmarks/cnf_samples/aim-50-1_6-yes1-4.cnf", true);
 
     //
     // Graph coloring benchmarks.
