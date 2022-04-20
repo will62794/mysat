@@ -112,6 +112,19 @@ void testSimple2() {
     std::cout << solver.getTerminationTreeDOT();
 }
 
+void testSimple3() {
+    Solver solver = Solver();
+    CNF ct1 = CNF({{"a", "b"},
+                   {"b", "c"},
+                   {"~a", "~x", "y"},
+                   {"~a", "x", "z"},
+                   {"~a", "~y", "z"},
+                   {"~a", "x", "~z"},
+                   {"~a", "~y", "~z"}});
+    assert(solver.isSatBruteForce(ct1) == solver.isSat(ct1));
+    std::cout << solver.getTerminationTreeDOT();
+}
+
 //
 // Randomized conformance checking, with checking correctness
 // of smaller formulas first.
@@ -177,6 +190,7 @@ int main(int argc, char const* argv[]) {
 
     testSimple1();
     testSimple2();
+    testSimple3();
 
     testDIMACSParse();
 
