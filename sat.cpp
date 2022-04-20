@@ -603,6 +603,9 @@ private:
     bool enableUnitPropagation = true;
     bool recordTerminationTree = true;
 
+    // Current set of clauses learned by CDCL.
+    std::vector<Clause> learnedClauses;
+
 public:
     Solver() {}
 
@@ -706,9 +709,21 @@ public:
                     // and simplify the formula based on this assignment.
                     currAssmt.set(unitLit.getVarName(), !unitLit.isNegated());
                     fassigned = fassigned.unitPropagate(unitLit);
+                    LOG(DEBUG) << "f assigned after unit prop round: " << fassigned.toString();
                 }
                 LOG(DEBUG) << "f after unit prop: " << fassigned.toString();
                 LOG(DEBUG) << "curr assignment after unit prop: " << currAssmt.toString();
+
+                // If a contradiction has been derived, apply conflict analysis.
+                if(fassigned.hasEmptyClause()){
+                    // TODO: Conflict analysis. 
+                    // That is, we want to find a conflict set i.e. a set of
+                    // variables and an assignment to them that leads to a
+                    // contradiction. So, we add the negation of such conflict
+                    // as a new clause i.e. we "learn" it.
+
+                }
+
             }
 
             // Record information for termination tree if enabled.
@@ -741,7 +756,7 @@ public:
             if (fassigned.hasEmptyClause()) {
                 // Current assignment is necessarily UNSAT, so no need to
                 // explore further down this branch.
-                LOG(DEBUG) << "fassigned has empty clause.";
+                LOG(DEBUG) << "fassigned has empty clause. (** CONFLICT **)";
                 lastNode = currNode;
                 continue;
             }
