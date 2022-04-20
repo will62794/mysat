@@ -181,9 +181,13 @@ int main(int argc, char const* argv[]) {
     defaultConf.set(el::Level::Debug, el::ConfigurationType::Enabled, "false");
     el::Loggers::reconfigureLogger("default", defaultConf);
 
-    testCNF("benchmarks/cnf_samples/aim-50-1_6-yes1-4.cnf", true);
+    // testCNF("benchmarks/cnf_samples/aim-50-1_6-yes1-4.cnf", true);
     
+    //
     // Graph coloring benchmarks.
+    //
+
+    // Easier.
     testCNF("benchmarks/flat30-60/flat30-1.cnf", true);
     testCNF("benchmarks/flat30-60/flat30-2.cnf", true);
     testCNF("benchmarks/flat30-60/flat30-3.cnf", true);
@@ -191,10 +195,18 @@ int main(int argc, char const* argv[]) {
     testCNF("benchmarks/flat30-60/flat30-5.cnf", true);
     testCNF("benchmarks/flat30-60/flat30-6.cnf", true);
 
-    // Still quite slow with current implementation.
-    testCNF("benchmarks/cnf_samples/par8-1-c.cnf", true);
-    testCNF("benchmarks/cnf_samples/aim-100-1_6-no-1.cnf", false);
-    testCNF("benchmarks/cnf_samples/dubois20.cnf", false);
+    // Harder.
+    testCNF("benchmarks/flat50-115/flat50-1.cnf", true);
+
+
+
+    // Still too slow with current implementation.
+
+    // testCNF("benchmarks/flat50-115/flat50-2.cnf", true);
+    // testCNF("benchmarks/flat50-115/flat50-3.cnf", true);
+    // testCNF("benchmarks/cnf_samples/par8-1-c.cnf", true);
+    // testCNF("benchmarks/cnf_samples/aim-100-1_6-no-1.cnf", false);
+    // testCNF("benchmarks/cnf_samples/dubois20.cnf", false);
 
     // testConformance();
 
