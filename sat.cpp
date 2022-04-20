@@ -623,6 +623,20 @@ public:
         std::cout << "===" << std::endl;
     }
 
+    std::string getTerminationTreeDOT() {
+        std::string outStr = "digraph G {\n";
+        for (auto e : terminationTree) {
+            std::string edgeStr = "";
+            edgeStr += ("\"" + e.from.getDOTId() + "\"");
+            edgeStr += (" -> ");
+            edgeStr += ("\"" + e.to.getDOTId() + "\"");
+            edgeStr += ";";
+            outStr += (edgeStr + "\n");
+        }
+        outStr += "}\n";
+        return outStr;
+    }
+
     bool _isSatBruteForceRec(CNF f,
                              std::vector<std::string> varList,
                              int varInd,

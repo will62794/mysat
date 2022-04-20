@@ -102,14 +102,14 @@ void testSimple1() {
     Solver solver = Solver();
     CNF ct1 = CNF({{"~x", "y"}, {"~y", "z"}});
     assert(solver.isSatBruteForce(ct1) == solver.isSat(ct1));
-    solver.printTerminationTree();
+    std::cout << solver.getTerminationTreeDOT();
 }
 
 void testSimple2() {
     Solver solver = Solver();
     CNF ct1 = CNF({{"~a", "b"}, {"~b", "~c"}, {"c", "~d"}});
     assert(solver.isSatBruteForce(ct1) == solver.isSat(ct1));
-    solver.printTerminationTree();
+    std::cout << solver.getTerminationTreeDOT();
 }
 
 //
@@ -186,7 +186,7 @@ int main(int argc, char const* argv[]) {
     el::Loggers::reconfigureLogger("default", defaultConf);
 
     // testCNF("benchmarks/cnf_samples/aim-50-1_6-yes1-4.cnf", true);
-    
+
     //
     // Graph coloring benchmarks.
     //
@@ -201,7 +201,6 @@ int main(int argc, char const* argv[]) {
 
     // Harder.
     testCNF("benchmarks/flat50-115/flat50-1.cnf", true);
-
 
 
     // Still too slow with current implementation.
