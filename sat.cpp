@@ -701,6 +701,9 @@ public:
             CNF fassigned = currF.assign(currAssmt);
             LOG(DEBUG) << "f after assignment: " << fassigned.toString();
 
+            // Pure literal elimination.
+            // TODO: Not implemented currently but may add it.
+
             // Close the formula under unit resolution, if enabled.
             if (enableUnitPropagation) {
                 while (fassigned.hasUnitClause()) {

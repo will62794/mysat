@@ -13,11 +13,16 @@
 
 \section{DPLL}
 
-The original DPLL algorithm views satisfiability as a search problem over the tree of possible boolean assignments, and combines this with \textit{conditioning} and \textit{unit propagation} techniques. In its most basic form, given a CNF formula $\Delta$, we start by assigning some variable a value of \textit{true} or \textit{false}, and then simplify the overall formula. We say that $\Delta$ is \textit{conditioned} on a literal $L$, notated as $\Delta|L$, if we replace the value of literal $L$ with \textit{true}, and the value of literal $\neg L$ with \textit{false}.
+The original DPLL algorithm views satisfiability as a search problem over the tree of possible boolean assignments. It combines this with \textit{conditioning} and \textit{unit propagation} techniques. The original DPLL algorithm also included \textit{pure literal elimination}, which simply sets a variable to true if it only ever appears in a non-negated form. In its most basic form, given a CNF formula $\Delta$, we start by assigning some variable a value of \textit{true} or \textit{false}, and then simplify the overall formula. We say that $\Delta$ is \textit{conditioned} on a literal $L$, notated as $\Delta|L$, if we replace the value of literal $L$ with \textit{true}, and the value of literal $\neg L$ with \textit{false}. After assigning a literal with a concrete value, we simplify the overall formula. If we simplify to something that is satisfied, then we're done, and can return a satisfying assignment. If we ever reach a state where all clauses cannot be satisfied, then we return unsatisfiable. In addition to this simple recursive search and formula simplification approach, DPLL included two basic rules for optimizing the search:
+\begin{enumerate}
+    \item \textit{Unit propagation}: If a unit clause (consisting of a single variable) appears in a formula, then assign the literal's variable to make it true, and simplify again.
+    \item \textit{Pure literal elimination}: If a propositional variable appears with only one polarity (i.e either only non-negated or negated), then we assign it to make all clauses containing it true, and simplify.
+\end{enumerate}
+Combining the basic recursive search and backtracking technique the above two rules for formula simplification constitutes the core of the basic DPLL algorithm.
 
-After assigning a literal with a concrete value, we simplify the overall formula. If we simplify to something that is satisfied, then we're done, and can return a satisfying assignment. If we ever reach a state where all clauses cannot be satisfied, then we return unsatisfiable.
+\section{CDCL}
 
-\subsection*{Random Satisfiability}
+\section{Random Satisfiability}
 
 Almost every 3-SAT formula is satisfiable when its ratio of (number of variables / number of clauses), is less than a value of about 4.25.
 
