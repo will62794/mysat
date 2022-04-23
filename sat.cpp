@@ -697,7 +697,7 @@ public:
 
             // Reduce based on current assignment.
             auto currAssmt = currNode._assmt;
-            CNF currF = currNode._f;
+            CNF currF = f;
             CNF fassigned = currF.assign(currAssmt);
             LOG(DEBUG) << "f after assignment: " << fassigned.toString();
 
@@ -706,6 +706,10 @@ public:
 
             // Close the formula under unit resolution, if enabled.
             if (enableUnitPropagation) {
+                // TODO: Track mapping between unit literal variable assignment
+                // and the clause that allowed it to be assigned via unit
+                // propagation, in order to track implication graph for conflict
+                // analysis.
                 while (fassigned.hasUnitClause()) {
                     auto unitLit = fassigned.getUnitLiteral();
                     // Assign the unit literal's variable to truthify the unit clause
