@@ -188,18 +188,18 @@ int main(int argc, char const* argv[]) {
     defaultConf.set(el::Level::Debug, el::ConfigurationType::Format, "%datetime %level %msg");
     el::Loggers::reconfigureLogger("default", defaultConf);
 
-    // testSimple1();
-    // testSimple2();
-    testSimple3();
-
-    return 0;
-
     testDIMACSParse();
+
+    testSimple1();
+    testSimple2();
+    testSimple3();
 
     // Turn off debug level here.
     defaultConf.setToDefault();
     defaultConf.set(el::Level::Debug, el::ConfigurationType::Enabled, "false");
     el::Loggers::reconfigureLogger("default", defaultConf);
+
+    testConformance();
 
     testCNF("benchmarks/cnf_samples/aim-50-1_6-yes1-4.cnf", true);
 
@@ -226,8 +226,6 @@ int main(int argc, char const* argv[]) {
     // testCNF("benchmarks/cnf_samples/par8-1-c.cnf", true);
     // testCNF("benchmarks/cnf_samples/aim-100-1_6-no-1.cnf", false);
     // testCNF("benchmarks/cnf_samples/dubois20.cnf", false);
-
-    // testConformance();
 
     // CNF t1 = CNF({{"x", "y", "z"}, {"z"}});
     // std::cout << "t1: " << t1.toString() << std::endl;
