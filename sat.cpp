@@ -156,6 +156,10 @@ class Clause {
 private:
     std::vector<Literal> _elems;
 
+    // Represents a clause that has one of its literals evaluate to true, so
+    // trivially evaluates to true.
+    bool _isSat = false;
+
 public:
     Clause(std::vector<Literal> elems) {
         _elems = elems;
@@ -167,8 +171,40 @@ public:
         }
     }
 
+    static Clause makeTrueClause() {
+        std::vector<Literal> empty;
+        Clause trueClause(empty);
+        trueClause.setTrue();
+        return trueClause;
+    }
+
+    void setTrue() {
+        _isSat = true;
+    }
+
+    bool isTrue() {
+        return _isSat;
+    }
+
+    /**
+     * Evaluate truth value of a clause under a given assignment.
+     */
+    bool eval(Assignment a) {
+        if (_isSat) {
+            return true;
+        }
+        bool clauseTrue = false;
+        for (auto l : getLiterals()) {
+            clauseTrue = clauseTrue || l.eval(a.getVal(l.getVarName()));
+        }
+        return clauseTrue;
+    }
+
     std::string toString() {
         std::string outStr;
+        if (_isSat) {
+            return "T";
+        }
         for (auto e : _elems) {
             outStr += e.toString();
             outStr += " | ";
@@ -246,19 +282,27 @@ public:
     }
 
     /**
-     * Is this CNF formula equivalent to 'true' i.e. is it an empty set of
-     * clauses.
+     * Is this CNF formula equivalent to 'true' i.e. are all of its clauses satisfied.
      */
     bool isTrue() {
-        return isEmpty();
+        bool allSat = true;
+        for (auto c : _clauses) {
+            allSat = allSat && c.isTrue();
+        }
+        return allSat;
     }
 
     /**
-     * Is this CNF formula equivalent to 'true' i.e. does it contain a single
-     * empty clause.
+     * Is this CNF formula equivalent to 'false' i.e. are all of its clauses unsatisfied.
      */
     bool isFalse() {
-        return _clauses.size() == 1 && _clauses.at(0).getLiterals().size() == 0;
+        bool allUnsat = true;
+        for (auto c : _clauses) {
+            allUnsat = allUnsat && c.size() == 1 && c.getLiterals().size() == 0;
+        }
+        return allUnsat;
+
+        // return _clauses.size() == 1 && _clauses.at(0).getLiterals().size() == 0;
     }
 
     /**
@@ -266,6 +310,18 @@ public:
      */
     bool isEmpty() {
         return _clauses.size() == 0;
+    }
+
+    // Is the current CNF satisfied i.e. all clauses trivially evaluate to true.
+    bool isSatisfied() {
+        if (_clauses.empty()) {
+            return true;
+        }
+        bool allSat = true;
+        for (auto c : _clauses) {
+            allSat = allSat && c.isTrue();
+        }
+        return allSat;
     }
 
     /**
@@ -277,7 +333,8 @@ public:
         }
 
         for (auto c : _clauses) {
-            if (c.getLiterals().size() == 0) {
+            // Check for empty clause that is not trivially true.
+            if (c.getLiterals().size() == 0 && !c.isTrue()) {
                 return true;
             }
         }
@@ -418,11 +475,13 @@ public:
     bool eval(Assignment assgmt) {
         bool allClausesTrue = true;
         for (Clause c : _clauses) {
-            bool clauseTrue = false;
-            for (auto l : c.getLiterals()) {
-                clauseTrue = clauseTrue || l.eval(assgmt.getVal(l.getVarName()));
-            }
-            allClausesTrue = allClausesTrue && clauseTrue;
+            allClausesTrue = allClausesTrue && c.eval(assgmt);
+            // if(c.setTrue)
+            // bool clauseTrue = false;
+            // for (auto l : c.getLiterals()) {
+            // clauseTrue = clauseTrue || l.eval(assgmt.getVal(l.getVarName()));
+            // }
+            // clauseTrue;
         }
         return allClausesTrue;
     }
@@ -439,6 +498,11 @@ public:
         // Initialize the set of clauses that will appear in the resulting CNF after assignment.
         std::vector<Clause> outClauses;
         for (auto c : _clauses) {
+            if (c.isTrue()) {
+                outClauses.push_back(Clause::makeTrueClause());
+                continue;
+            }
+
             std::vector<Literal> outClauseLits;
             bool clauseIsTrue = false;
             // For each literal in this clause, check if it is assigned a value.
@@ -470,7 +534,14 @@ public:
             // Add this clause if it was not necessarily satisfied under the
             // given assignment.
             if (!clauseIsTrue) {
-                Clause newClause = Clause(outClauseLits);
+                Clause newClause(outClauseLits);
+                outClauses.push_back(newClause);
+            } else {
+                // Represent a satisfied clause as trivially true, but don't
+                // remove it from the formula.
+                std::vector<Literal> emptyEls;
+                Clause newClause(emptyEls);
+                newClause.setTrue();
                 outClauses.push_back(newClause);
             }
         }
@@ -503,6 +574,24 @@ public:
         // Should never reach.
         assert(false);
         return Literal("");
+    }
+
+    /**
+     * Return index of a unit clause, if one exists.
+     */
+    int getUnitClause() {
+        for (int ind = 0; ind < _clauses.size(); ind++) {
+            auto c = _clauses[ind];
+            if (c.size() == 1) {
+                return ind;
+            }
+        }
+        // No unit clause exists.
+        return -1;
+    }
+
+    std::vector<Clause> getClauses() {
+        return _clauses;
     }
 
     /**
@@ -706,31 +795,50 @@ public:
 
             // Close the formula under unit resolution, if enabled.
             if (enableUnitPropagation) {
-                // TODO: Track mapping between unit literal variable assignment
-                // and the clause that allowed it to be assigned via unit
-                // propagation, in order to track implication graph for conflict
-                // analysis.
+                // Store a mapping from each assigned variable back to the
+                // index of the clause in which it became unit i.e. store a
+                // pointer back to its "antecedent" clause. That is, the
+                // clause that "caused" it be assigned via unit resolution.
+                std::map<std::string, int> antecedents;
+
+                // Initialize the antecedent graph with the existing variable assignments.
+                auto avars = currAssmt.getVals();
+                for (auto it = avars.begin(); it != avars.end(); it++) {
+                    antecedents[it->first] = -1;  // no predecessor.
+                }
+
                 while (fassigned.hasUnitClause()) {
+                    // Also return the index of the clause that this variable is now unit in.
+                    // A literal l is unit in a clause (l1 \/ ... \/ lk \/ l) if all l1..lk have
+                    // been assigned false.
                     auto unitLit = fassigned.getUnitLiteral();
+                    auto unitClauseInd = fassigned.getUnitClause();
+
                     // Assign the unit literal's variable to truthify the unit clause
                     // and simplify the formula based on this assignment.
                     currAssmt.set(unitLit.getVarName(), !unitLit.isNegated());
                     fassigned = fassigned.unitPropagate(unitLit);
                     LOG(DEBUG) << "f assigned after unit prop round: " << fassigned.toString();
+                    antecedents[unitLit.getVarName()] = unitClauseInd;
                 }
                 LOG(DEBUG) << "f after unit prop: " << fassigned.toString();
                 LOG(DEBUG) << "curr assignment after unit prop: " << currAssmt.toString();
 
+                // TODO: Finish fleshing out antecedent graph and its use for deriving conflict
+                // clauses.
+                std::cout << "antecedent graph:" << std::endl;
+                for (auto it = antecedents.begin(); it != antecedents.end(); it++) {
+                    std::cout << it->first << " -> " << it->second << std::endl;
+                }
+
                 // If a contradiction has been derived, apply conflict analysis.
-                if(fassigned.hasEmptyClause()){
-                    // TODO: Conflict analysis. 
+                if (fassigned.hasEmptyClause()) {
+                    // TODO: Conflict analysis.
                     // That is, we want to find a conflict set i.e. a set of
                     // variables and an assignment to them that leads to a
                     // contradiction. So, we add the negation of such conflict
                     // as a new clause i.e. we "learn" it.
-
                 }
-
             }
 
             // Record information for termination tree if enabled.
@@ -746,7 +854,8 @@ public:
                 terminationTree.insert(e);
             }
 
-            if (fassigned.isEmpty()) {
+            // if (fassigned.isEmpty()) {
+            if (fassigned.isSatisfied()) {
                 // If we determined that the formula is necessarily satisfiable
                 // under the current partial assignment, then we can fill in
                 // arbitrary values for the remaining, unassigned variables.

@@ -190,8 +190,8 @@ int main(int argc, char const* argv[]) {
 
     // testDIMACSParse();
 
-    // testSimple1();
-    // testSimple2();
+    testSimple1();
+    testSimple2();
     testSimple3();
 
     return 0;
