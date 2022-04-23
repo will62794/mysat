@@ -595,6 +595,13 @@ public:
     }
 
     /**
+     * Return the nth clause from this CNF, 0-indexed.
+     */
+    Clause getClause(int ind) {
+        return _clauses.at(ind);
+    }
+
+    /**
      * Apply unit resolution to the current CNF and return a new formula with the result.
      *
      * Assumes that the given literal is a unit clause in this CNF.
@@ -829,6 +836,22 @@ public:
                 std::cout << "antecedent graph:" << std::endl;
                 for (auto it = antecedents.begin(); it != antecedents.end(); it++) {
                     std::cout << it->first << " -> " << it->second << std::endl;
+
+                    std::string litVarName = it->first;
+                    int clauseInd = it->second;
+
+                    // Record predecessor variable assignments for each node.
+                    // TODO: Decide how to store this.
+                    if (clauseInd >= 0) {
+                        auto unitClause = f.getClause(clauseInd);
+                        std::vector<std::string> anteVars;
+                        for (auto l : unitClause.getLiterals()) {
+                            if (l.getVarName() != litVarName) {
+                                anteVars.push_back(l.getVarName());
+                                std::cout << l.getVarName() << std::endl;
+                            }
+                        };
+                    }
                 }
 
                 // If a contradiction has been derived, apply conflict analysis.
