@@ -188,11 +188,13 @@ int main(int argc, char const* argv[]) {
     defaultConf.set(el::Level::Debug, el::ConfigurationType::Format, "%datetime %level %msg");
     el::Loggers::reconfigureLogger("default", defaultConf);
 
-    testDIMACSParse();
+    // testDIMACSParse();
 
-    testSimple1();
-    testSimple2();
+    // testSimple1();
+    // testSimple2();
     testSimple3();
+
+    return 0;
 
     // Turn off debug level here.
     defaultConf.setToDefault();
