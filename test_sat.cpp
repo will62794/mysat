@@ -28,7 +28,7 @@ void testConformanceRandomCNF(int niters, int nclauses, int nvars, int clause_si
             assert(randf.eval(solver.getAssignment()));
         }
 
-        solver.printTerminationTree();
+        // solver.printTerminationTree();
 
         // std::cout << "Result: " << (retOracle ? "SAT" : "UNSAT") << std::endl;
         // std::cout << randf.toDIMACS() << std::endl;
