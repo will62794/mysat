@@ -925,6 +925,7 @@ public:
             // TODO: Not implemented currently but may add it.
 
             // Close the formula under unit resolution, if enabled.
+            int backjumpLevel = -1;
             if (enableUnitPropagation) {
                 // Store a mapping from each assigned variable back to the
                 // index of the clause in which it became unit i.e. store a
@@ -1003,7 +1004,6 @@ public:
                 }
 
                 // If a contradiction has been derived, apply conflict analysis.
-                int backtrackLevel = -1;
                 if (fassigned.hasEmptyClause()) {
 
                     numConflicts++;
@@ -1104,7 +1104,7 @@ public:
                                 }
                                 LOG(DEBUG)
                                     << "second highest decision level: " << levelSecondHighest;
-                                backtrackLevel = levelSecondHighest;
+                                backjumpLevel = levelSecondHighest;
                                 currCNF.appendClause(learnedClause);
                                 break;
                             }
@@ -1113,10 +1113,7 @@ public:
                     }
                 }
 
-                LOG(DEBUG) << "backtrack level: " << backtrackLevel;
-
-                // TODO: continually pop stuff off the stack at levels deeper than our backtrack
-                // level.
+                LOG(DEBUG) << "backjump level: " << backjumpLevel;
             }
 
 
@@ -1131,6 +1128,20 @@ public:
                     currNode._currVar, currNode._assmt.toStringCompact(), fassigned.toString());
                 TreeEdge e = TreeEdge(from, to);
                 terminationTree.insert(e);
+            }
+
+
+            //
+            // Backjump to lower decision level if we ran conflict analysis!
+            //
+            if (backjumpLevel >= 0) {
+                LOG(DEBUG) << "popping current levels on stack. ";
+
+                while (frontier.back().getDecisionLevel() > backjumpLevel) {
+                    frontier.pop_back();
+                }
+                // Restart the search process after backjumping.
+                continue;
             }
 
             // if (fassigned.isEmpty()) {
