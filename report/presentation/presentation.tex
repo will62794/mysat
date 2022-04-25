@@ -1,0 +1,52 @@
+\documentclass{beamer}
+\usetheme{Boadilla}
+
+\title{SAT Solving with Conflict Driven Clause Learning}
+% \subtitle{Overview and Implementation}
+\author{William Schultz}
+\institute{CS 7240 Final Project}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+    \titlepage
+\end{frame}
+
+\begin{frame}{Overview and Project Goals}
+\begin{itemize}
+    \item Satisfiability is the canonical NP-complete problem.
+    
+    \item Much work has been devoted to building efficient SAT solvers over last decades.\\
+    
+    \item \textbf{Project Goal:} Implement a basic SAT solver based on CDCL (conflict driven clause learning), which is the dominant core technique used by most modern SAT solvers.
+    \begin{itemize}
+        \item Gain a deeper understanding of the DPLL and CDCL based algorithms for SAT solving
+        \item Compare a naive implementation with state of the art solver performance
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{DPLL}
+    Basic idea of DPLL algorithm is to do a depth first, brute force search with backtracking and some basic optimizations included.
+\end{frame}
+
+\begin{frame}{Unit Propagation}
+    Core resolution rule employed in DPLL, and also in CDCL as we will see later.
+\end{frame}
+
+
+\begin{frame}{Conflict Driven Clause Learning}
+    Idea: when you encounter a conflict in the search tree, \textit{learn} a clause that prevents you from making the same mistake again.
+\end{frame}
+
+\begin{frame}{SAT Solver Implementation}
+\end{frame}
+
+\begin{frame}{Resolution}
+    Resolution proofs.
+\end{frame}
+
+
+\end{document}
+
