@@ -26,6 +26,8 @@ std::vector<std::string> split(std::string const& str, std::string delim) {
 class Assignment {
 private:
     std::map<std::string, bool> _vals;
+    // Allows for recording of decision levels for each variable assignment.
+    std::map<std::string, int> _levels;
 
 public:
     Assignment() {}
@@ -34,8 +36,17 @@ public:
         _vals = a;
     }
 
+    Assignment(std::map<std::string, bool> a, std::map<std::string, int> levels) {
+        _vals = a;
+        _levels = levels;
+    }
+
     std::map<std::string, bool> getVals() {
         return _vals;
+    }
+
+    int getDecisionLevel(std::string varname) {
+        return _levels.at(varname);
     }
 
     std::set<std::string> getAssignedVars() {
@@ -58,9 +69,16 @@ public:
         _vals.insert(std::make_pair(varName, val));
     }
 
+    void set(std::string varName, bool val, int level) {
+        _vals.insert(std::make_pair(varName, val));
+        _levels.insert(std::make_pair(varName, level));
+    }
+
     void unset(std::string varName) {
         auto it = _vals.find(varName);
         _vals.erase(it);
+        auto it2 = _levels.find(varName);
+        _levels.erase(it2);
     }
 
     std::string toString() {
@@ -344,6 +362,13 @@ public:
             allClauses.push_back(Clause(currClauseLits));
         }
         return CNF(allClauses);
+    }
+
+    /**
+     * Appends the given clause to this CNF formula, modifying it in place.
+     */
+    void appendClause(Clause c) {
+        _clauses.push_back(c);
     }
 
     /**
@@ -702,6 +727,9 @@ public:
     Assignment _assmt;
     Assignment _parentAssmt;
 
+    // Decision level that can be stored during SAT tree exploration.
+    int _decisionLevel = -1;
+
     Context() {
         _currVar = "";
         _parentVar = "";
@@ -712,13 +740,19 @@ public:
             std::string parentVar,
             int currVarInd,
             Assignment assmt,
-            Assignment parentAssmt) {
+            Assignment parentAssmt,
+            int decisionLevel) {
         _f = f;
         _currVar = currVar;
         _parentVar = parentVar;
         _currVarInd = currVarInd;
         _assmt = assmt;
         _parentAssmt = parentAssmt;
+        _decisionLevel = decisionLevel;
+    }
+
+    int getDecisionLevel() {
+        return _decisionLevel;
     }
 };
 
@@ -861,9 +895,13 @@ public:
         std::vector<Context> frontier;
 
         std::map<std::string, bool> initVals;
-        frontier.push_back(Context(f, varList.at(0), "root", 0, initVals, {}));
+        int initDecisionLevel = 0;
+        frontier.push_back(Context(f, varList.at(0), "root", 0, initVals, {}, initDecisionLevel));
 
         Context lastNode = Context();
+
+        // Current formula, with potentially learned clauses added over time.
+        CNF currCNF = f;
 
         // Explore all possible assignments in a depth first manner.
         while (frontier.size() > 0) {
@@ -879,7 +917,7 @@ public:
 
             // Reduce based on current assignment.
             auto currAssmt = currNode._assmt;
-            CNF currF = f;
+            CNF currF = currCNF;
             CNF fassigned = currF.assign(currAssmt);
             LOG(DEBUG) << "f after assignment: " << fassigned.toString();
 
@@ -894,6 +932,8 @@ public:
                 // clause that "caused" it be assigned via unit resolution.
                 std::map<std::string, int> antecedents;
                 std::vector<Literal> trail;
+                // The decision levels of each assigned variable.
+                std::map<std::string, int> varDecisionLevels;
 
                 // Set of variables that are assigned at the current decision
                 // level, either by an explicit decision, or as an assignment
@@ -906,6 +946,8 @@ public:
                 for (auto it = avars.begin(); it != avars.end(); it++) {
                     antecedents[it->first] = -1;  // no predecessor.
                     trail.push_back(Literal(it->first, it->second));
+
+                    varDecisionLevels[it->first] = currAssmt.getDecisionLevel(it->first);
                 }
 
                 while (fassigned.hasUnitClause()) {
@@ -927,7 +969,9 @@ public:
 
                     // Mark as assigned at this decision level.
                     varsAssignedAtCurrLevel.insert(unitLit.getVarName());
+                    varDecisionLevels[unitLit.getVarName()] = currNode.getDecisionLevel();
                 }
+                LOG(DEBUG) << "current decision level: " << currNode.getDecisionLevel();
                 LOG(DEBUG) << "f after unit prop: " << fassigned.toString();
                 LOG(DEBUG) << "curr assignment after unit prop: " << currAssmt.toString();
 
@@ -943,7 +987,7 @@ public:
                     // Record predecessor variable assignments for each node.
                     // TODO: Decide how to store this.
                     if (clauseInd >= 0) {
-                        auto unitClause = f.getClause(clauseInd);
+                        auto unitClause = currCNF.getClause(clauseInd);
                         std::vector<std::string> anteVars;
                         for (auto l : unitClause.getLiterals()) {
                             if (l.getVarName() != litVarName) {
@@ -959,6 +1003,7 @@ public:
                 }
 
                 // If a contradiction has been derived, apply conflict analysis.
+                int backtrackLevel = -1;
                 if (fassigned.hasEmptyClause()) {
 
                     numConflicts++;
@@ -976,7 +1021,7 @@ public:
 
                     // Start with the conflicting clause.
                     auto emptyCInd = fassigned.getEmptyClause();
-                    Clause currClause = f.getClause(emptyCInd);
+                    Clause currClause = currCNF.getClause(emptyCInd);
                     LOG(DEBUG) << "UNSAT clause index: " << emptyCInd;
 
                     // Walk backwards through the trail.
@@ -998,7 +1043,7 @@ public:
                                 break;
                             }
 
-                            Clause ante = f.getClause(anteInd);
+                            Clause ante = currCNF.getClause(anteInd);
                             LOG(DEBUG) << "curr conflict clause: " << currClause.toString();
                             LOG(DEBUG) << "ante: "
                                        << "(c" << anteInd << ") " << ante.toString();
@@ -1035,23 +1080,45 @@ public:
                                 learnedClauses.push_back(learnedClause);
                                 LOG(DEBUG) << "learned clause: " << learnedClause.toString();
 
-                                // TODO.
                                 // We will backtrack to the "assertion level",
                                 // which is the second highest (i.e. second
                                 // deepest) level of any variable that appears
                                 // in the learned conflict clause.
-                                int backtrackLevel;
+                                int levelHighest = -1;
+                                int levelSecondHighest = -1;
                                 for (auto l : learnedClause.getLiterals()) {
                                     // Determine the decision level of this variable.
+                                    auto level = varDecisionLevels[l.getVarName()];
+                                    LOG(DEBUG) << "level: " << level;
+                                    if (level > levelHighest) {
+                                        levelSecondHighest = levelHighest;
+                                        levelHighest = level;
+                                    } else if (level > levelSecondHighest &&
+                                               level != levelHighest) {
+                                        levelSecondHighest = level;
+                                    }
                                 }
 
+                                if (levelSecondHighest == -1) {
+                                    levelSecondHighest = levelHighest;
+                                }
+                                LOG(DEBUG)
+                                    << "second highest decision level: " << levelSecondHighest;
+                                backtrackLevel = levelSecondHighest;
+                                currCNF.appendClause(learnedClause);
                                 break;
                             }
                         }
                         ti--;
                     }
                 }
+
+                LOG(DEBUG) << "backtrack level: " << backtrackLevel;
+
+                // TODO: continually pop stuff off the stack at levels deeper than our backtrack
+                // level.
             }
+
 
             // Record information for termination tree if enabled.
             // Mostly for debugging/visualization.
@@ -1099,8 +1166,8 @@ public:
                 Assignment tAssign(currAssmt);
                 Assignment fAssign(currAssmt);
 
-                tAssign.set(currNode._currVar, true);
-                fAssign.set(currNode._currVar, false);
+                tAssign.set(currNode._currVar, true, currNode.getDecisionLevel() + 1);
+                fAssign.set(currNode._currVar, false, currNode.getDecisionLevel() + 1);
 
                 // If we have reached the last variable, then pass in a dummy
                 // 'leaf' variable node for the next level in the search tree.
@@ -1110,8 +1177,20 @@ public:
                 auto nextVar = varNextInd == varList.size() ? "LEAF" : varList.at(varNextInd);
 
                 std::string parentVar = currNode._currVar;
-                Context tctx(fassigned, nextVar, parentVar, varNextInd, tAssign, currNode._assmt);
-                Context fctx(fassigned, nextVar, parentVar, varNextInd, fAssign, currNode._assmt);
+                Context tctx(fassigned,
+                             nextVar,
+                             parentVar,
+                             varNextInd,
+                             tAssign,
+                             currNode._assmt,
+                             currNode.getDecisionLevel() + 1);
+                Context fctx(fassigned,
+                             nextVar,
+                             parentVar,
+                             varNextInd,
+                             fAssign,
+                             currNode._assmt,
+                             currNode.getDecisionLevel() + 1);
 
                 // TODO: Order of true/false exploration could be chosen differently or dynamically.
                 frontier.push_back(fctx);
