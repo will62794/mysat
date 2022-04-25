@@ -131,11 +131,11 @@ public:
         return prefix + _name;
     }
 
-    std::string getVarName() {
+    std::string getVarName() const {
         return _name;
     }
 
-    bool isNegated() {
+    bool isNegated() const {
         return _neg;
     }
 
@@ -144,6 +144,11 @@ public:
      */
     bool eval(bool val) {
         return _neg ? !val : val;
+    }
+
+    bool operator<(const Literal& other) const {
+        return std::make_tuple(_neg, _name) <
+            std::make_tuple(other.isNegated(), other.getVarName());
     }
 };
 
@@ -236,6 +241,48 @@ public:
             outSet.insert(e.getVarName());
         }
         return outSet;
+    }
+
+    /**
+     * Does this clause contain a literal with the given variable.
+     */
+    bool hasVariable(std::string varname) {
+        for (auto l : _elems) {
+            if (l.getVarName() == varname) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Perform resolution on the two given clauses and return the resolvent.
+     *
+     * Assumes that each clause contains a literal with opposite polarity i.e.
+     *
+     * C1 = ~L \/ a1 \/ ... \/ ak
+     * C2 =  L \/ b1 \/ ... \/ bk
+     *
+     * where L is given as 'varToResolveOn'.
+     */
+    static Clause resolve(Clause c1, Clause c2, std::string varToResolveOn) {
+        std::set<Literal> resolvedClauseLits;
+        for (auto l : c1.getLiterals()) {
+            if (l.getVarName() != varToResolveOn) {
+                resolvedClauseLits.insert(l);
+            }
+        }
+        for (auto l : c2.getLiterals()) {
+            if (l.getVarName() != varToResolveOn) {
+                resolvedClauseLits.insert(l);
+            }
+        }
+        std::vector<Literal> litVec;
+        for (auto l : resolvedClauseLits) {
+            litVec.push_back(l);
+        }
+
+        return Clause(litVec);
     }
 };
 
@@ -339,6 +386,20 @@ public:
             }
         }
         return false;
+    }
+
+    /**
+     * Return index of the first empty clause in this CNF.
+     */
+    int getEmptyClause() {
+        for (int ci = 0; ci < _clauses.size(); ci++) {
+            auto c = _clauses.at(ci);
+            // Check for empty clause that is not trivially true.
+            if (c.getLiterals().size() == 0 && !c.isTrue()) {
+                return ci;
+            }
+        }
+        return -1;
     }
 
 
@@ -807,11 +868,13 @@ public:
                 // pointer back to its "antecedent" clause. That is, the
                 // clause that "caused" it be assigned via unit resolution.
                 std::map<std::string, int> antecedents;
+                std::vector<Literal> trail;
 
                 // Initialize the antecedent graph with the existing variable assignments.
                 auto avars = currAssmt.getVals();
                 for (auto it = avars.begin(); it != avars.end(); it++) {
                     antecedents[it->first] = -1;  // no predecessor.
+                    trail.push_back(Literal(it->first, it->second));
                 }
 
                 while (fassigned.hasUnitClause()) {
@@ -827,6 +890,8 @@ public:
                     fassigned = fassigned.unitPropagate(unitLit);
                     LOG(DEBUG) << "f assigned after unit prop round: " << fassigned.toString();
                     antecedents[unitLit.getVarName()] = unitClauseInd;
+
+                    trail.push_back(unitLit);
                 }
                 LOG(DEBUG) << "f after unit prop: " << fassigned.toString();
                 LOG(DEBUG) << "curr assignment after unit prop: " << currAssmt.toString();
@@ -848,14 +913,74 @@ public:
                         for (auto l : unitClause.getLiterals()) {
                             if (l.getVarName() != litVarName) {
                                 anteVars.push_back(l.getVarName());
-                                std::cout << l.getVarName() << std::endl;
                             }
                         };
                     }
                 }
 
+                LOG(DEBUG) << "trail:";
+                for (auto l : trail) {
+                    LOG(DEBUG) << l.toString();
+                }
+
                 // If a contradiction has been derived, apply conflict analysis.
                 if (fassigned.hasEmptyClause()) {
+
+                    // If we have now encountered a conflict, we can now start
+                    // with the conflicting clause C, and pick the most recent
+                    // literal in it that was assigned, L, Then take the
+                    // antecedent of L, and compute resolve(C,L). This gives a
+                    // new clause C', which we can then continute the process
+                    // with. That is, find the most recent assigned literal
+                    // appearing in C', and then find its antecedent and do
+                    // resolution again. We should be able to find the most
+                    // recent assigned literal in a clause by walking backwards
+                    // through the trail (??)
+
+                    // Start with the conflicting clause.
+                    auto emptyCInd = fassigned.getEmptyClause();
+                    Clause currClause = f.getClause(emptyCInd);
+                    LOG(DEBUG) << "UNSAT clause index: " << emptyCInd;
+
+                    // Walk backwards through the trail.
+                    int ti = trail.size() - 1;
+                    while (ti > 0) {
+                        auto lit = trail[ti];
+                        if (currClause.hasVariable(lit.getVarName())) {
+                            // This is the most recent var in trail that was assigned in this
+                            // clause.
+                            LOG(DEBUG) << "first assigned: " << lit.toString();
+
+                            // Then, figure out the antecedent clause for this variable.
+                            int anteInd = antecedents[lit.getVarName()];
+
+                            // Have reached a decision (non-forced) variable assignment in the
+                            // trail.
+                            if (anteInd < 0) {
+                                LOG(DEBUG) << "Reached decision variable.";
+                                break;
+                            }
+
+                            Clause ante = f.getClause(anteInd);
+                            LOG(DEBUG) << "curr conflict clause: " << currClause.toString();
+                            LOG(DEBUG) << "ante: "
+                                       << "(c" << anteInd << ") " << ante.toString();
+
+                            // Now, resolve the current clause with the antecedent.
+                            Clause resolvent = Clause::resolve(ante, currClause, lit.getVarName());
+                            LOG(DEBUG) << "resolvent: " << resolvent.toString();
+                            currClause = resolvent;
+
+                            // TODO (4/25/22): Once we're done resolving, we need to add the
+                            // discovered conflict clause as a learned clause, and then backjump
+                            // appropriately.
+                        }
+                        ti--;
+                    }
+
+                    // Start with the conflicting clause i.e. the clause that produced the conflict.
+
+
                     // TODO: Conflict analysis.
                     // That is, we want to find a conflict set i.e. a set of
                     // variables and an assignment to them that leads to a
