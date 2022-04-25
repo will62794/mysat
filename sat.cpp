@@ -1031,25 +1031,26 @@ public:
 
                             if (numVarsFromCurrLevel == 1) {
                                 // Terminate.
-                                auto clauseToLearn = currClause.negate();
-                                learnedClauses.push_back(clauseToLearn);
-                                LOG(DEBUG) << "learned clause: " << clauseToLearn.toString();
+                                Clause learnedClause = currClause.negate();
+                                learnedClauses.push_back(learnedClause);
+                                LOG(DEBUG) << "learned clause: " << learnedClause.toString();
+
+                                // TODO.
+                                // We will backtrack to the "assertion level",
+                                // which is the second highest (i.e. second
+                                // deepest) level of any variable that appears
+                                // in the learned conflict clause.
+                                int backtrackLevel;
+                                for (auto l : learnedClause.getLiterals()) {
+                                    // Determine the decision level of this variable.
+                                }
+
                                 break;
                             }
                         }
                         ti--;
-                        // varsAssignedAtCurrLevel
                     }
                 }
-
-                // Start with the conflicting clause i.e. the clause that produced the conflict.
-
-
-                // TODO: Conflict analysis.
-                // That is, we want to find a conflict set i.e. a set of
-                // variables and an assignment to them that leads to a
-                // contradiction. So, we add the negation of such conflict
-                // as a new clause i.e. we "learn" it.
             }
 
             // Record information for termination tree if enabled.
