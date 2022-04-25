@@ -781,6 +781,9 @@ private:
     // Current set of clauses learned by CDCL.
     std::vector<Clause> learnedClauses;
 
+    // Number of UNSAT conflicts encountered during search.
+    int numConflicts = 0;
+
 public:
     Solver() {}
 
@@ -790,6 +793,10 @@ public:
 
     void addTerminationEdge(TreeEdge e) {
         terminationTree.insert(e);
+    }
+
+    int getNumConflicts() {
+        return numConflicts;
     }
 
     void printTerminationTree() {
@@ -953,6 +960,8 @@ public:
 
                 // If a contradiction has been derived, apply conflict analysis.
                 if (fassigned.hasEmptyClause()) {
+
+                    numConflicts++;
 
                     // If we have now encountered a conflict, we can now start
                     // with the conflicting clause C, and pick the most recent

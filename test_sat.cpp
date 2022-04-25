@@ -122,6 +122,7 @@ void testSimple3() {
                    {"~a", "x", "~z"},
                    {"~a", "~y", "~z"}});
     assert(solver.isSatBruteForce(ct1) == solver.isSat(ct1));
+    std::cout << "num conflicts: " << solver.getNumConflicts() << std::endl;
     std::cout << solver.getTerminationTreeDOT();
 }
 
@@ -190,8 +191,8 @@ int main(int argc, char const* argv[]) {
 
     // testDIMACSParse();
 
-    testSimple1();
-    testSimple2();
+    // testSimple1();
+    // testSimple2();
     testSimple3();
 
     return 0;
