@@ -933,9 +933,9 @@ public:
 
                 // TODO: Finish fleshing out antecedent graph and its use for deriving conflict
                 // clauses.
-                std::cout << "antecedent graph:" << std::endl;
+                // std::cout << "antecedent graph:" << std::endl;
                 for (auto it = antecedents.begin(); it != antecedents.end(); it++) {
-                    std::cout << it->first << " -> " << it->second << std::endl;
+                    // std::cout << it->first << " -> " << it->second << std::endl;
 
                     std::string litVarName = it->first;
                     int clauseInd = it->second;

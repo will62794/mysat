@@ -174,6 +174,8 @@ void testCNF(std::string cnfFile, bool expectSat) {
     auto durationMS = duration_cast<milliseconds>(stop - start);
     std::cout << "Checked CNF file '" << cnfFile << "' in " << durationMS.count() << "ms"
               << std::endl;
+    std::cout << "num conflicts: " << solver.getNumConflicts() << std::endl;
+
 
     // If the formula was satisfiable, test that the discovered satisfying
     // assignment is correct.
