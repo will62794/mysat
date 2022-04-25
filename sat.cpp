@@ -150,6 +150,13 @@ public:
         return std::make_tuple(_neg, _name) <
             std::make_tuple(other.isNegated(), other.getVarName());
     }
+
+    /**
+     * Return the negated version of this literal.
+     */
+    Literal negate() {
+        return Literal(getVarName(), !_neg);
+    }
 };
 
 
@@ -283,6 +290,17 @@ public:
         }
 
         return Clause(litVec);
+    }
+
+    /**
+     * Return the given clause with all literals negated.
+     */
+    Clause negate() {
+        std::vector<Literal> outLits;
+        for (auto l : getLiterals()) {
+            outLits.push_back(l.negate());
+        }
+        return Clause(outLits);
     }
 };
 
@@ -870,6 +888,12 @@ public:
                 std::map<std::string, int> antecedents;
                 std::vector<Literal> trail;
 
+                // Set of variables that are assigned at the current decision
+                // level, either by an explicit decision, or as an assignment
+                // derived via unit propagation.
+                std::set<std::string> varsAssignedAtCurrLevel;
+                varsAssignedAtCurrLevel.insert(currNode._currVar);
+
                 // Initialize the antecedent graph with the existing variable assignments.
                 auto avars = currAssmt.getVals();
                 for (auto it = avars.begin(); it != avars.end(); it++) {
@@ -891,7 +915,11 @@ public:
                     LOG(DEBUG) << "f assigned after unit prop round: " << fassigned.toString();
                     antecedents[unitLit.getVarName()] = unitClauseInd;
 
+                    // Save assignment to the trail.
                     trail.push_back(unitLit);
+
+                    // Mark as assigned at this decision level.
+                    varsAssignedAtCurrLevel.insert(unitLit.getVarName());
                 }
                 LOG(DEBUG) << "f after unit prop: " << fassigned.toString();
                 LOG(DEBUG) << "curr assignment after unit prop: " << currAssmt.toString();
@@ -974,19 +1002,45 @@ public:
                             // TODO (4/25/22): Once we're done resolving, we need to add the
                             // discovered conflict clause as a learned clause, and then backjump
                             // appropriately.
+
+                            // Termination condition for resolution: stop when
+                            // the current resolvent contains exactly one
+                            // literal whose value was assigned at the current
+                            // decision level.
+
+                            // Check for the number of variables assigned at this decision level
+                            // that appear in the current conflict clause.
+                            int numVarsFromCurrLevel = 0;
+                            for (auto v : currClause.getVariableSet()) {
+                                if (varsAssignedAtCurrLevel.find(v) !=
+                                    varsAssignedAtCurrLevel.end()) {
+                                    numVarsFromCurrLevel += 1;
+                                }
+                            }
+                            LOG(DEBUG)
+                                << "num vars from curr decision level: " << numVarsFromCurrLevel;
+
+                            if (numVarsFromCurrLevel == 1) {
+                                // Terminate.
+                                auto clauseToLearn = currClause.negate();
+                                learnedClauses.push_back(clauseToLearn);
+                                LOG(DEBUG) << "learned clause: " << clauseToLearn.toString();
+                                break;
+                            }
                         }
                         ti--;
+                        // varsAssignedAtCurrLevel
                     }
-
-                    // Start with the conflicting clause i.e. the clause that produced the conflict.
-
-
-                    // TODO: Conflict analysis.
-                    // That is, we want to find a conflict set i.e. a set of
-                    // variables and an assignment to them that leads to a
-                    // contradiction. So, we add the negation of such conflict
-                    // as a new clause i.e. we "learn" it.
                 }
+
+                // Start with the conflicting clause i.e. the clause that produced the conflict.
+
+
+                // TODO: Conflict analysis.
+                // That is, we want to find a conflict set i.e. a set of
+                // variables and an assignment to them that leads to a
+                // contradiction. So, we add the negation of such conflict
+                // as a new clause i.e. we "learn" it.
             }
 
             // Record information for termination tree if enabled.
