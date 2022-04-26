@@ -913,13 +913,13 @@ public:
             Context currNode = frontier.back();
             frontier.pop_back();
 
-            LOG(DEBUG) << "*** currVar: '" << currNode._currVar
+            LOG(DEBUG) << "*** currVar to assign next: '" << currNode._currVar
                        << "', varInd=" << currNode._currVarInd
                        << ", parentVar: " << currNode._parentVar << " ***";
             LOG(DEBUG) << "curr decision level: " << currNode.getDecisionLevel();
             LOG(DEBUG) << "parentVar: " << currNode._parentVar;
             LOG(DEBUG) << "curr assignment: " << currNode._assmt.toString();
-            LOG(DEBUG) << "par assignment: " << currNode._parentAssmt.toString();
+            // LOG(DEBUG) << "par assignment: " << currNode._parentAssmt.toString();
 
             // Reduce based on current assignment.
             auto currAssmt = currNode._assmt;
@@ -1104,7 +1104,7 @@ public:
                                 // Terminate.
                                 Clause learnedClause = currClause.negate();
                                 learnedClauses.push_back(learnedClause);
-                                LOG(DEBUG) << "### learned clause: " << learnedClause.toString();
+                                LOG(DEBUG) << "# learned clause: " << learnedClause.toString();
 
                                 // We will backtrack to the "assertion level",
                                 // which is the second highest (i.e. second
@@ -1162,9 +1162,11 @@ public:
                 LOG(DEBUG) << "popping current levels on stack. ";
 
                 while (frontier.back().getDecisionLevel() > backjumpLevel && frontier.size() > 0) {
+                    LOG(DEBUG) << "popping " << frontier.back()._assmt.toString();
                     frontier.pop_back();
                 }
                 // Restart the search process after backjumping.
+                LOG(DEBUG) << "Backjumping in search. ";
                 continue;
             }
 
@@ -1228,7 +1230,11 @@ public:
                              currNode.getDecisionLevel() + 1);
 
                 // TODO: Order of true/false exploration could be chosen differently or dynamically.
+                LOG(DEBUG) << "pushing " << tAssign.toString() << " nextvar=" << nextVar
+                           << " onto search frontier";
                 frontier.push_back(fctx);
+                LOG(DEBUG) << "pushing " << fAssign.toString() << " nextvar=" << nextVar
+                           << " onto search frontier";
                 frontier.push_back(tctx);
             }
 
