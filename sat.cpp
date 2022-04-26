@@ -352,14 +352,15 @@ public:
 
         std::vector<Clause> allClauses;
         for (int i = 0; i < nclauses; i++) {
-            std::vector<Literal> currClauseLits;
+            std::set<Literal> currClauseLits;
             for (int j = 0; j < clause_size; j++) {
                 int randVarInd = rand() % nvars;
                 auto randVar = allVars[randVarInd];
                 auto negation = rand() % 2 ? "~" : "";
-                currClauseLits.push_back(Literal(negation + randVar));
+                currClauseLits.insert(Literal(negation + randVar));
             }
-            allClauses.push_back(Clause(currClauseLits));
+            std::vector<Literal> litVec(currClauseLits.begin(), currClauseLits.end());
+            allClauses.push_back(Clause(litVec));
         }
         return CNF(allClauses);
     }
