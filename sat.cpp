@@ -91,6 +91,10 @@ public:
             outStr += "=";
             outStr += it->second ? "1" : "0";
             outStr += " ";
+            if (_levels.find(it->first) != _levels.end()) {
+                outStr += "(l" + std::to_string(_levels.at(it->first)) + ")";
+            }
+            outStr += " ";
         }
         return outStr + "}";
     }
@@ -888,7 +892,7 @@ public:
     }
 
     bool isSat(CNF f) {
-        LOG(DEBUG) << "checking isSat";
+        LOG(DEBUG) << "checking isSat:" << f.toString();
 
         std::vector<std::string> varList = f.getVariableList();
 
@@ -909,9 +913,10 @@ public:
             Context currNode = frontier.back();
             frontier.pop_back();
 
-            LOG(DEBUG) << "* currVar: '" << currNode._currVar
+            LOG(DEBUG) << "*** currVar: '" << currNode._currVar
                        << "', varInd=" << currNode._currVarInd
-                       << ", parentVar: " << currNode._parentVar;
+                       << ", parentVar: " << currNode._parentVar << " ***";
+            LOG(DEBUG) << "curr decision level: " << currNode.getDecisionLevel();
             LOG(DEBUG) << "parentVar: " << currNode._parentVar;
             LOG(DEBUG) << "curr assignment: " << currNode._assmt.toString();
             LOG(DEBUG) << "par assignment: " << currNode._parentAssmt.toString();
@@ -925,9 +930,26 @@ public:
             // Pure literal elimination.
             // TODO: Not implemented currently but may add it.
 
+            if (fassigned.isSatisfied()) {
+                // If we determined that the formula is necessarily satisfiable
+                // under the current partial assignment, then we can fill in
+                // arbitrary values for the remaining, unassigned variables.
+                for (auto v : varList) {
+                    // Assign a value to the currently unassigned variable.
+                    if (!currAssmt.hasVar(v)) {
+                        bool arbitraryVal = true;
+                        currAssmt.set(v, arbitraryVal);
+                    }
+                }
+                _currAssignment = currAssmt;
+                return true;
+            }
+
             // Close the formula under unit resolution, if enabled.
             int backjumpLevel = -1;
             if (enableUnitPropagation) {
+                LOG(DEBUG) << "running unit propagation";
+
                 // Store a mapping from each assigned variable back to the
                 // index of the clause in which it became unit i.e. store a
                 // pointer back to its "antecedent" clause. That is, the
@@ -947,7 +969,8 @@ public:
                 auto avars = currAssmt.getVals();
                 for (auto it = avars.begin(); it != avars.end(); it++) {
                     antecedents[it->first] = -1;  // no predecessor.
-                    trail.push_back(Literal(it->first, it->second));
+                    trail.push_back(Literal(it->first, !it->second));
+                    LOG(DEBUG) << "trail element " << it->first << "=" << it->second;
 
                     varDecisionLevels[it->first] = currAssmt.getDecisionLevel(it->first);
                 }
@@ -961,7 +984,8 @@ public:
 
                     // Assign the unit literal's variable to truthify the unit clause
                     // and simplify the formula based on this assignment.
-                    currAssmt.set(unitLit.getVarName(), !unitLit.isNegated());
+                    currAssmt.set(
+                        unitLit.getVarName(), !unitLit.isNegated(), currNode.getDecisionLevel());
                     fassigned = fassigned.unitPropagate(unitLit);
                     LOG(DEBUG) << "f assigned after unit prop round: " << fassigned.toString();
                     antecedents[unitLit.getVarName()] = unitClauseInd;
@@ -1023,7 +1047,8 @@ public:
                     // Start with the conflicting clause.
                     auto emptyCInd = fassigned.getEmptyClause();
                     Clause currClause = currCNF.getClause(emptyCInd);
-                    LOG(DEBUG) << "UNSAT clause index: " << emptyCInd;
+                    LOG(DEBUG) << "!! conflict encountered, conflicting clause index: "
+                               << emptyCInd;
 
                     // Walk backwards through the trail.
                     int ti = trail.size() - 1;
@@ -1046,8 +1071,8 @@ public:
 
                             Clause ante = currCNF.getClause(anteInd);
                             LOG(DEBUG) << "curr conflict clause: " << currClause.toString();
-                            LOG(DEBUG) << "ante: "
-                                       << "(c" << anteInd << ") " << ante.toString();
+                            LOG(DEBUG)
+                                << "antecedent: " << ante.toString() << " (c" << anteInd << ")";
 
                             // Now, resolve the current clause with the antecedent.
                             Clause resolvent = Clause::resolve(ante, currClause, lit.getVarName());
@@ -1079,7 +1104,7 @@ public:
                                 // Terminate.
                                 Clause learnedClause = currClause.negate();
                                 learnedClauses.push_back(learnedClause);
-                                LOG(DEBUG) << "learned clause: " << learnedClause.toString();
+                                LOG(DEBUG) << "### learned clause: " << learnedClause.toString();
 
                                 // We will backtrack to the "assertion level",
                                 // which is the second highest (i.e. second
@@ -1090,7 +1115,7 @@ public:
                                 for (auto l : learnedClause.getLiterals()) {
                                     // Determine the decision level of this variable.
                                     auto level = varDecisionLevels[l.getVarName()];
-                                    LOG(DEBUG) << "level: " << level;
+                                    // LOG(DEBUG) << "level: " << level;
                                     if (level > levelHighest) {
                                         levelSecondHighest = levelHighest;
                                         levelHighest = level;
@@ -1103,8 +1128,6 @@ public:
                                 if (levelSecondHighest == -1) {
                                     levelSecondHighest = levelHighest;
                                 }
-                                LOG(DEBUG)
-                                    << "second highest decision level: " << levelSecondHighest;
                                 backjumpLevel = levelSecondHighest;
                                 currCNF.appendClause(learnedClause);
                                 break;
@@ -1138,7 +1161,7 @@ public:
             if (backjumpLevel >= 0) {
                 LOG(DEBUG) << "popping current levels on stack. ";
 
-                while (frontier.back().getDecisionLevel() > backjumpLevel) {
+                while (frontier.back().getDecisionLevel() > backjumpLevel && frontier.size() > 0) {
                     frontier.pop_back();
                 }
                 // Restart the search process after backjumping.

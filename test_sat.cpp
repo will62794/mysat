@@ -126,6 +126,40 @@ void testSimple3() {
     std::cout << solver.getTerminationTreeDOT();
 }
 
+void testSimple4() {
+    Solver solver = Solver();
+    CNF ct1 = CNF({{"x0", "~x0"}, {"~x1"}});
+    assert(solver.isSatBruteForce(ct1) == solver.isSat(ct1));
+    std::cout << "num conflicts: " << solver.getNumConflicts() << std::endl;
+    std::cout << solver.getTerminationTreeDOT();
+}
+
+void testSimple5() {
+    Solver solver = Solver();
+    CNF ct1 = CNF({{"x1"}, {"x2", "~x0"}});
+    assert(solver.isSatBruteForce(ct1) == solver.isSat(ct1));
+    std::cout << "num conflicts: " << solver.getNumConflicts() << std::endl;
+    std::cout << solver.getTerminationTreeDOT();
+}
+
+void testSimple6() {
+    Solver solver = Solver();
+    CNF ct1 = CNF({{"~x1", "~x3"}, {"~x0"}, {"x0", "x2"}, {"~x2"}});
+    assert(solver.isSatBruteForce(ct1) == solver.isSat(ct1));
+    std::cout << "num conflicts: " << solver.getNumConflicts() << std::endl;
+    std::cout << solver.getTerminationTreeDOT();
+}
+
+void testSimple7() {
+    Solver solver = Solver();
+    CNF ct1 = CNF({{"x3", "~x0"}, {"~x2", "~x3"}, {"x2", "~x3"}, {"x3", "~x3"}});
+    std::cout << ct1.toDIMACS();
+    assert(solver.isSatBruteForce(ct1) == solver.isSat(ct1));
+    std::cout << "num conflicts: " << solver.getNumConflicts() << std::endl;
+    std::cout << solver.getTerminationTreeDOT();
+}
+
+
 //
 // Randomized conformance checking, with checking correctness
 // of smaller formulas first.
@@ -196,8 +230,13 @@ int main(int argc, char const* argv[]) {
     // testSimple1();
     // testSimple2();
     testSimple3();
+    testSimple4();
+    testSimple5();
+    testSimple6();
+    testSimple7();
 
-    return 0;
+
+    // return 0;
 
     // Turn off debug level here.
     defaultConf.setToDefault();
