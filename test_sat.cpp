@@ -174,6 +174,7 @@ void testConformance() {
     testConformanceRandomCNF(150, 4, 4, 2);
     testConformanceRandomCNF(150, 8, 4, 2);
     testConformanceRandomCNF(150, 16, 8, 4);
+    testConformanceRandomCNF(150, 32, 8, 4);
     testConformanceRandomCNF(150, 50, 10, 4);
 
     auto stop = high_resolution_clock::now();
