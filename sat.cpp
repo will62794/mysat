@@ -1171,16 +1171,34 @@ public:
 
                 LOG(DEBUG) << "popping current levels on stack. ";
 
+                // Context with the assignments we backtrack past removed, that
+                // we will restart our search from.
+                Assignment assmtToRestartFrom = currAssmt;
+
                 // The stack records 'Context' objects, so we offset the backjump level by 1 to
                 // account for this.
                 int frontierBackjumpLevel = (backjumpLevel + 1);
                 while (frontier.back().getDecisionLevel() > frontierBackjumpLevel &&
                        frontier.size() > 0) {
                     LOG(DEBUG) << "popping " << frontier.back()._assmt.toString();
+
+                    // Clear this assignment.
+                    assmtToRestartFrom.unset(frontier.back()._currVar);
+
                     frontier.pop_back();
                 }
                 // Restart the search process after backjumping.
                 LOG(DEBUG) << "Backjumping in search. ";
+
+                //
+                // TODO: Need to think more carefully about what needs to be done here.
+                //
+                // auto restartVar = varList.at(backjumpLevel);
+                // LOG(DEBUG) << "Backjumping to variable: " << restartVar << ", assignment: " <<
+                // assmtToRestartFrom.toString(); Context ctxToRestartFrom(currCNF, restartVar, "",
+                // backjumpLevel, assmtToRestartFrom, {}, backjumpLevel);
+                // frontier.push_back(ctxToRestartFrom);
+
                 continue;
             }
 
