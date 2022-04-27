@@ -168,13 +168,13 @@ void testSimple7() {
 //
 void testConformance() {
     auto start = high_resolution_clock::now();
-    testConformanceRandomCNF(50, 1, 2, 2);
-    testConformanceRandomCNF(50, 2, 2, 2);
-    testConformanceRandomCNF(50, 2, 3, 2);
-    testConformanceRandomCNF(50, 4, 4, 2);
-    testConformanceRandomCNF(50, 8, 4, 2);
-    testConformanceRandomCNF(50, 16, 8, 4);
-    testConformanceRandomCNF(100, 50, 10, 4);
+    testConformanceRandomCNF(150, 1, 2, 2);
+    testConformanceRandomCNF(150, 2, 2, 2);
+    testConformanceRandomCNF(150, 2, 3, 2);
+    testConformanceRandomCNF(150, 4, 4, 2);
+    testConformanceRandomCNF(150, 8, 4, 2);
+    testConformanceRandomCNF(150, 16, 8, 4);
+    testConformanceRandomCNF(150, 50, 10, 4);
 
     auto stop = high_resolution_clock::now();
     auto durationMS = duration_cast<milliseconds>(stop - start);
