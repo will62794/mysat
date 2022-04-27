@@ -1,6 +1,8 @@
 \documentclass{beamer}
 \usetheme{Boadilla}
 
+\usepackage{tikz}
+
 \title{SAT Solving with Conflict Driven Clause Learning}
 % \subtitle{Overview and Implementation}
 \author{William Schultz}
@@ -8,6 +10,9 @@
 \date{\today}
 
 \begin{document}
+
+\newcommand{\green}[1]{\textcolor{green}{#1}}
+\newcommand{\red}[1]{\textcolor{red}{#1}}
 
 \begin{frame}
     \titlepage
@@ -19,34 +24,149 @@
     
     \item Much work has been devoted to building efficient SAT solvers over last decades.\\
     
-    \item \textbf{Project Goal:} Implement a basic SAT solver based on CDCL (conflict driven clause learning), which is the dominant core technique used by most modern SAT solvers.
+    \item \textbf{Project Goal:} Implement a basic SAT solver based on \textit{conflict driven clause learning} (CDCL), which is the dominant core technique used in modern SAT solvers.
     \begin{itemize}
         \item Gain a deeper understanding of the DPLL and CDCL based algorithms for SAT solving
-        \item Compare a naive implementation with state of the art solver performance
+        \item Use as a platform for potentially exploring new SAT solving techniques and understanding limitations of existing ones
     \end{itemize}
 \end{itemize}
 \end{frame}
 
-\begin{frame}{DPLL}
-    Basic idea of DPLL algorithm is to do a depth first, brute force search with backtracking and some basic optimizations included.
+\begin{frame}{Review: The SAT Problem}
+    The SAT problem:
+    \vspace{12pt}
+
+    \textit{Given a boolean formula in conjunctive normal form, determine whether there exists an assignment to the variables of the formula that makes the overall formula true.}
+
+    \pause
+    \vspace{12pt}
+    e.g.
+    \begin{align*}
+        (x_1 \vee x_2) \wedge (\neg x_3 \vee \neg x_1)
+    \end{align*}
+    \pause
+    \begin{center}
+        SAT, with $\{x_1=1,x_2=0,x_3=0\}$. 
+    \end{center}
+\end{frame}
+
+\begin{frame}{DPLL: SAT as Search}
+    \begin{itemize}
+        \item A basic approach to solving SAT is to view it as a search problem over possible assignments.
+        \item This is the basis of the Davis–Putnam–Logemann–Loveland (DPLL) algorithm \cite{dpll1961}
+        \item Basic idea of DPLL is to do a depth first, brute force search with backtracking along with some basic formula simplification as you go.
+        \begin{itemize}
+            \item Also employs the \textit{unit propagation rule}
+        \end{itemize}
+    \end{itemize}
 \end{frame}
 
 \begin{frame}{Unit Propagation}
-    Core resolution rule employed in DPLL, and also in CDCL as we will see later.
+    \begin{itemize}
+        \item Core simplification rule employed in DPLL, and also in CDCL as we will see later.
+        \item A \textit{unit clause} is a clause that contains exactly one literal.
+        \item If a CNF formula contains a unit clause then we can apply unit propagation i.e. set that literal to the appropriate truth value to satisfy its clause e.g.
+        \begin{align*}
+            &\{\{b\}, \{\neg b, \neg c\}, \{c, \neg d\}\}\\
+            \pause
+            &\{\{\green{b}\}, \{\red{\neg b}, \neg c\}, \{c, \neg d\}\}\\
+            \pause
+            &\{\{\neg c\}, \{c, \neg d\}\} \\
+            \pause
+            &\{\{\green{\neg c}\}, \{\red{c}, \neg d\}\}\\
+            \pause
+            &\{\{\neg d\}\}
+        \end{align*}
+    \end{itemize}
 \end{frame}
 
+\begin{frame}{DPLL: Example}
+    \begin{columns}
+        % CNF formula.
+        \begin{column}{0.45\textwidth}
+            \begin{align*}
+                &\{\neg a,b\}\\
+                &\{\neg b,\neg c\}\\
+                &\{\neg c,\neg d\}\\
+            \end{align*}
+        \end{column}
 
-\begin{frame}{Conflict Driven Clause Learning}
-    Idea: when you encounter a conflict in the search tree, \textit{learn} a clause that prevents you from making the same mistake again.
+        % DPLL search tree.
+        \begin{column}{0.45\textwidth}
+            % \begin{center}
+            \begin{tikzpicture}
+                \node {a}
+                child [] {node {b} 
+                    child [] {node {c}
+                        child [] {node {d} 
+                            child [] {node {x} edge from parent [] node [left]{1}}
+                            child [] {node {x} edge from parent [] node [right]{0}}
+                        edge from parent [] node [left]{0}} 
+                    edge from parent [] node [left]{1}}
+                    child [] {node {c} 
+                    edge from parent [] node [right]{0}}
+                edge from parent [] node [left]{1}}
+                child [] {node {b} 
+                edge from parent [] node [right]{0}};
+            \end{tikzpicture}        
+            % \end{center}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Beyond DPLL: Learning from Conflicts}
+    \begin{itemize}
+        \item DPLL is a rather naive algorithm
+        \item An extension to this basic framework is to \textit{learn from conflicts} 
+        \item When you encounter a conflict in the search tree, \textit{learn} a clause that prevents you from making the similar mistakes again
+        \item This fundamental approch is known as \textit{conflict-driven clause learning} (CDCL) and started being employed in SAT solvers around the late 90s and early 2000s.
+        \item In addition, employ \textit{non-chronological backtracking}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{CDCL}
+\begin{itemize}
+    \item When using CDCL, if a conflict is encountered, we not only backtrack to the previous level, as in DPLL
+    \item We try to learn a \textit{conflict clause} along with a \textit{backjump} level, which determines how far back in the search tree to unwind to.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{CDCL: Example}
+    \begin{align*}
+        &\{a,b\}\\
+        &\{b,c\}\\
+        &\{\neg a, \neg x, y\} \\
+        &\{\neg a, x, z\} \\
+        &\{ \neg a, \neg y, z\} \\
+        &\{ \neg a, x, \neg z\} \\
+        &\{ \neg a, \neg y, \neg z\}
+    \end{align*}
 \end{frame}
 
 \begin{frame}{SAT Solver Implementation}
+    \begin{itemize}
+        \item Worked on implementing my own CDCL SAT solver as a framework for exploring future potential SAT enhancements
+        \item Written in C++, and tested on a variety of easy to medium SAT benchmark problems
+    \end{itemize}
 \end{frame}
 
-\begin{frame}{Resolution}
-    Resolution proofs.
+\begin{frame}{Evaluation}
+    \begin{itemize}
+        \item Some peformance results of my SAT solver against a performant, modern solver.
+    \end{itemize}
 \end{frame}
 
+\begin{frame}{Future Extensions}
+    \begin{itemize}
+        \item Resolution proofs
+        \item Variable ordering heuristics
+        \item Learning heuristics
+        \item Learning end to end SAT solver (neuroSAT)
+    \end{itemize}
+\end{frame}
+
+\bibliographystyle{alpha}
+\bibliography{../references}
 
 \end{document}
 
