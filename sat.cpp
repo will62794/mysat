@@ -963,7 +963,8 @@ public:
                 // level, either by an explicit decision, or as an assignment
                 // derived via unit propagation.
                 std::set<std::string> varsAssignedAtCurrLevel;
-                varsAssignedAtCurrLevel.insert(currNode._currVar);
+                // The parent var is the one that has been assigned at this decision level.
+                varsAssignedAtCurrLevel.insert(currNode._parentVar);
 
                 // Initialize the antecedent graph with the existing variable assignments.
                 auto avars = currAssmt.getVals();
@@ -1000,6 +1001,10 @@ public:
                 LOG(DEBUG) << "current decision level: " << currNode.getDecisionLevel();
                 LOG(DEBUG) << "f after unit prop: " << fassigned.toString();
                 LOG(DEBUG) << "curr assignment after unit prop: " << currAssmt.toString();
+
+                for (auto v : varsAssignedAtCurrLevel) {
+                    LOG(DEBUG) << "after unit prop, var assigned at curr level: " << v;
+                }
 
                 // TODO: Finish fleshing out antecedent graph and its use for deriving conflict
                 // clauses.
@@ -1102,7 +1107,7 @@ public:
 
                             if (numVarsFromCurrLevel == 1) {
                                 // Terminate.
-                                Clause learnedClause = currClause.negate();
+                                Clause learnedClause = currClause;
                                 learnedClauses.push_back(learnedClause);
                                 LOG(DEBUG) << "-> learned clause: " << learnedClause.toString();
 
