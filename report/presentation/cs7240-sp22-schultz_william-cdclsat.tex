@@ -67,7 +67,7 @@
 \end{frame}
 
 \begin{frame}{Unit Propagation}
-    \begin{itemize}
+    \begin{itemize}[<+->]
         \item Core simplification rule employed in DPLL, and also in CDCL as we will see later.
         \item A \textit{unit clause} is a clause that contains exactly one literal.
         \item If a CNF formula contains a unit clause then we can apply unit propagation i.e. set that literal to the appropriate truth value to satisfy its clause e.g.
@@ -118,7 +118,7 @@
 \end{frame}
 
 \begin{frame}{Beyond DPLL: Learning from Conflicts}
-    \begin{itemize}
+    \begin{itemize}[<+->]
         \item DPLL is a rather naive algorithm
         \item An extension to this basic framework is to \textit{learn from conflicts} 
         \item When you encounter a conflict in the search tree, \textit{learn} a clause that prevents you from making the similar mistakes again
@@ -135,15 +135,29 @@
 \end{frame}
 
 \begin{frame}{CDCL: Example}
-    \begin{align*}
-        &\{a,b\}\\
-        &\{b,c\}\\
-        &\{\neg a, \neg x, y\} \\
-        &\{\neg a, x, z\} \\
-        &\{ \neg a, \neg y, z\} \\
-        &\{ \neg a, x, \neg z\} \\
-        &\{ \neg a, \neg y, \neg z\}
-    \end{align*}
+
+    \begin{columns}
+        % CNF formula.
+        \begin{column}{0.45\textwidth}
+            \begin{align*}
+                &\{a,b\}\\
+                &\{b,c\}\\
+                &\{\neg a, \neg x, y\} \\
+                &\{\neg a, x, z\} \\
+                &\{ \neg a, \neg y, z\} \\
+                &\{ \neg a, x, \neg z\} \\
+                &\{ \neg a, \neg y, \neg z\}
+            \end{align*}
+        \end{column}
+
+        % DPLL/CDCL search tree.
+        \begin{column}{0.45\textwidth}
+            % \begin{center}
+            \input{figures/dpll-conflicts-example-tree.tex}
+            % \end{center}
+        \end{column}
+    \end{columns}
+
 \end{frame}
 
 \begin{frame}{SAT Solver Implementation}
