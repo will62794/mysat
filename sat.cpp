@@ -1177,6 +1177,8 @@ public:
 
                 // The stack records 'Context' objects, so we offset the backjump level by 1 to
                 // account for this.
+
+                // TODO: I don't think this backjump level calculation is correct.
                 int frontierBackjumpLevel = (backjumpLevel + 1);
                 while (frontier.back().getDecisionLevel() > frontierBackjumpLevel &&
                        frontier.size() > 0) {
