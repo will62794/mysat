@@ -1171,7 +1171,11 @@ public:
 
                 LOG(DEBUG) << "popping current levels on stack. ";
 
-                while (frontier.back().getDecisionLevel() > backjumpLevel && frontier.size() > 0) {
+                // The stack records 'Context' objects, so we offset the backjump level by 1 to
+                // account for this.
+                int frontierBackjumpLevel = (backjumpLevel + 1);
+                while (frontier.back().getDecisionLevel() > frontierBackjumpLevel &&
+                       frontier.size() > 0) {
                     LOG(DEBUG) << "popping " << frontier.back()._assmt.toString();
                     frontier.pop_back();
                 }
