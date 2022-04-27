@@ -235,13 +235,16 @@ int main(int argc, char const* argv[]) {
     testSimple6();
     testSimple7();
 
+    testCNF("benchmarks/random/random1.cnf", true);
 
-    // return 0;
+
+    return 0;
 
     // Turn off debug level here.
     defaultConf.setToDefault();
     defaultConf.set(el::Level::Debug, el::ConfigurationType::Enabled, "false");
     el::Loggers::reconfigureLogger("default", defaultConf);
+
 
     testConformance();
 
