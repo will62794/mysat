@@ -24,7 +24,7 @@
     
     \item Much work has been devoted to building efficient SAT solvers over last decades.\\
     
-    \item \textbf{Project Goal:} Implement a basic SAT solver based on \textit{conflict driven clause learning} (CDCL), which is the dominant core technique used in modern SAT solvers.
+    \item \textbf{Project Goal:} Implement a basic SAT solver based on \textit{conflict driven clause learning} (CDCL), the dominant core technique used in modern solvers.
     \begin{itemize}
         \item Gain a deeper understanding of the DPLL and CDCL based algorithms for SAT solving
         \item Use as a platform for potentially exploring new SAT solving techniques and understanding limitations of existing ones
@@ -48,6 +48,11 @@
     \begin{center}
         SAT, with $\{x_1=1,x_2=0,x_3=0\}$. 
     \end{center}
+    \pause
+    CNF notation:
+    \begin{align*}
+        \{\{x_1, x_2\}, \{\neg x_3, \neg x_1\}\}
+    \end{align*}
 \end{frame}
 
 \begin{frame}{DPLL: SAT as Search}
@@ -67,15 +72,27 @@
         \item A \textit{unit clause} is a clause that contains exactly one literal.
         \item If a CNF formula contains a unit clause then we can apply unit propagation i.e. set that literal to the appropriate truth value to satisfy its clause e.g.
         \begin{align*}
-            &\{\{b\}, \{\neg b, \neg c\}, \{c, \neg d\}\}\\
-            \pause
-            &\{\{\green{b}\}, \{\red{\neg b}, \neg c\}, \{c, \neg d\}\}\\
-            \pause
-            &\{\{\neg c\}, \{c, \neg d\}\} \\
-            \pause
-            &\{\{\green{\neg c}\}, \{\red{c}, \neg d\}\}\\
-            \pause
-            &\{\{\neg d\}\}
+            \action<+->{
+                &\{\{b\}, \{\neg b, \neg c\}, \{c, \neg d\}\}\\
+            }
+            \action<+->{
+                &\{\{\green{b}\}, \{\red{\neg b}, \neg c\}, \{c, \neg d\}\}\\
+            }
+            \action<+->{
+                &\{\{\neg c\}, \{c, \neg d\}\} \\
+            }
+            \action<+->{
+                &\{\{\green{\neg c}\}, \{\red{c}, \neg d\}\}\\
+            }
+            \action<+->{
+                &\{\{\neg d\}\}\\
+            }
+            \action<+->{
+                &\{\{\green{\neg d}\}\}\\
+            }
+            \action<+->{
+                &\{\} \quad (\text{SAT})
+            }
         \end{align*}
     \end{itemize}
 \end{frame}
@@ -94,21 +111,7 @@
         % DPLL search tree.
         \begin{column}{0.45\textwidth}
             % \begin{center}
-            \begin{tikzpicture}
-                \node {a}
-                child [] {node {b} 
-                    child [] {node {c}
-                        child [] {node {d} 
-                            child [] {node {x} edge from parent [] node [left]{1}}
-                            child [] {node {x} edge from parent [] node [right]{0}}
-                        edge from parent [] node [left]{0}} 
-                    edge from parent [] node [left]{1}}
-                    child [] {node {c} 
-                    edge from parent [] node [right]{0}}
-                edge from parent [] node [left]{1}}
-                child [] {node {b} 
-                edge from parent [] node [right]{0}};
-            \end{tikzpicture}        
+            \input{figures/dpll-example-tree.tex}
             % \end{center}
         \end{column}
     \end{columns}
