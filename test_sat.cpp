@@ -16,10 +16,11 @@ void testConformanceRandomCNF(int niters, int nclauses, int nvars, int clause_si
     srand(33);
     for (int k = 0; k < niters; k++) {
         Solver solver = Solver();
-        auto randf = CNF::randomCNF(nclauses, nvars, clause_size);
+        CNF randf = CNF::randomCNF(nclauses, nvars, clause_size);
         std::cout << "- random CNF: " << randf.toString() << std::endl;
         auto retOracle = solver.isSatBruteForce(randf);
         auto retImpl = solver.isSat(randf);
+        // std::cout << randf.toDIMACS() << std::endl;
         assert(retOracle == retImpl);
 
         // If the formula was satisfiable, test that the discovered satisfying
