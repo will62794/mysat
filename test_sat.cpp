@@ -257,6 +257,8 @@ int main(int argc, char const* argv[]) {
     testCNF("benchmarks/random/random1.cnf", true);
     testCNF("benchmarks/random/random2.cnf", true);
     testCNF("benchmarks/random/random3.cnf", true);
+
+    // Still failing currently.
     testCNF("benchmarks/random/random4.cnf", true);
     testCNF("benchmarks/random/random5.cnf", true);
 
