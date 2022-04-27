@@ -169,14 +169,23 @@ void testSimple7() {
 //
 void testConformance() {
     auto start = high_resolution_clock::now();
-    testConformanceRandomCNF(150, 1, 2, 2);
-    testConformanceRandomCNF(150, 2, 2, 2);
-    testConformanceRandomCNF(150, 2, 3, 2);
-    testConformanceRandomCNF(150, 4, 4, 2);
-    testConformanceRandomCNF(150, 8, 4, 2);
-    testConformanceRandomCNF(150, 16, 8, 4);
-    testConformanceRandomCNF(150, 32, 8, 4);
-    testConformanceRandomCNF(150, 50, 10, 4);
+    
+    // Small clause size.
+    testConformanceRandomCNF(500, 1, 2, 2);
+    testConformanceRandomCNF(500, 2, 2, 2);
+    testConformanceRandomCNF(500, 2, 3, 2);
+    testConformanceRandomCNF(500, 4, 4, 2);
+    testConformanceRandomCNF(500, 8, 4, 2);
+
+    // Increased clause size.
+    testConformanceRandomCNF(1500, 4, 3, 3);
+    testConformanceRandomCNF(1500, 6, 3, 3);
+    testConformanceRandomCNF(1500, 8, 3, 3);
+    testConformanceRandomCNF(1500, 10, 3, 3);
+    testConformanceRandomCNF(1500, 12, 3, 3);
+    testConformanceRandomCNF(1500, 16, 3, 3);
+    testConformanceRandomCNF(1500, 32, 8, 4);
+    testConformanceRandomCNF(1500, 50, 10, 4);
 
     auto stop = high_resolution_clock::now();
     auto durationMS = duration_cast<milliseconds>(stop - start);
@@ -237,10 +246,12 @@ int main(int argc, char const* argv[]) {
     testSimple6();
     testSimple7();
 
-    testCNF("benchmarks/random/random1.cnf", true);
+    testCNF("benchmarks/random/random0.cnf", true);
+    // testCNF("benchmarks/random/random1.cnf", true);
+    // testCNF("benchmarks/random/random2.cnf", true);
+    // testCNF("benchmarks/random/random3.cnf", true);
 
-
-    return 0;
+    // return 0;
 
     // Turn off debug level here.
     defaultConf.setToDefault();
