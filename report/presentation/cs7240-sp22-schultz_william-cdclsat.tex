@@ -27,7 +27,8 @@
     \item \textbf{Project Goal:} Implement a basic SAT solver based on \textit{conflict driven clause learning} (CDCL), the dominant core technique used in modern solvers.
     \begin{itemize}
         \item Gain a deeper understanding of the DPLL and CDCL based algorithms for SAT solving
-        \item Use as a platform for potentially exploring new SAT solving techniques and understanding limitations of existing ones
+        \item Use as a platform for potentially exploring new SAT solving techniques 
+        \item E.g. learning heuristics using a data-driven approach, extending methods of \textit{CrystalBall} \cite{2019sooscrystalball}
     \end{itemize}
 \end{itemize}
 \end{frame}
@@ -170,19 +171,18 @@
 \end{itemize}
 \end{frame}
 
-
 \begin{frame}{CDCL: Implication Graph}
-\begin{itemize}
-    \item Can represent the propagation of variable assignments in an \textit{implication graph}
-    \item Nodes of this graph represent variable assignments made in the current search path
-    \item Edges correspond to dependencies between these assignments.
+    \begin{itemize}
+        \item Can represent the propagation of variable assignments in an \textit{implication graph}
+        \item Nodes of this graph represent variable assignments made in the current search path
+        \item Edges correspond to dependencies between these assignments.
 \end{itemize}
 \end{frame}
 
 
 \begin{frame}{SAT Solver Implementation}
     \begin{itemize}
-        \item Worked on implementing my own CDCL SAT solver as a framework for exploring future potential SAT enhancements
+        \item Iimplementing my own CDCL SAT solver as a framework for exploring future potential SAT enhancements
         \item Around 1500 lines of C++, tested on a variety of easy to medium SAT benchmark problems
         \item \url{https://github.com/will62794/mysat}
     \end{itemize}
@@ -201,6 +201,13 @@
         \item Learning heuristics
         \item Learning end to end SAT solver (neuroSAT)
     \end{itemize}
+\end{frame}
+
+\begin{frame}{}
+    \begin{center}
+        \large
+        Questions?
+    \end{center}
 \end{frame}
 
 \bibliographystyle{alpha}
