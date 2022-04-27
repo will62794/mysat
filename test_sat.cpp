@@ -169,23 +169,30 @@ void testSimple7() {
 //
 void testConformance() {
     auto start = high_resolution_clock::now();
-    
-    // Small clause size.
-    testConformanceRandomCNF(500, 1, 2, 2);
-    testConformanceRandomCNF(500, 2, 2, 2);
-    testConformanceRandomCNF(500, 2, 3, 2);
-    testConformanceRandomCNF(500, 4, 4, 2);
-    testConformanceRandomCNF(500, 8, 4, 2);
 
-    // Increased clause size.
-    testConformanceRandomCNF(1500, 4, 3, 3);
-    testConformanceRandomCNF(1500, 6, 3, 3);
-    testConformanceRandomCNF(1500, 8, 3, 3);
-    testConformanceRandomCNF(1500, 10, 3, 3);
-    testConformanceRandomCNF(1500, 12, 3, 3);
-    testConformanceRandomCNF(1500, 16, 3, 3);
-    testConformanceRandomCNF(1500, 32, 8, 4);
-    testConformanceRandomCNF(1500, 50, 10, 4);
+    // Small clause size.
+    testConformanceRandomCNF(300, 1, 2, 2);
+    testConformanceRandomCNF(300, 2, 2, 2);
+    testConformanceRandomCNF(300, 2, 3, 2);
+    testConformanceRandomCNF(300, 4, 4, 2);
+    testConformanceRandomCNF(300, 8, 4, 2);
+
+    // Larger clause size.
+    testConformanceRandomCNF(1000, 4, 3, 3);
+    testConformanceRandomCNF(1000, 6, 3, 3);
+    testConformanceRandomCNF(1000, 8, 3, 3);
+    testConformanceRandomCNF(1000, 10, 3, 3);
+    testConformanceRandomCNF(1000, 12, 3, 3);
+    testConformanceRandomCNF(1000, 16, 3, 3);
+
+    // Larger clause size.
+    testConformanceRandomCNF(1000, 4, 3, 4);
+    testConformanceRandomCNF(1000, 4, 3, 4);
+    testConformanceRandomCNF(1000, 6, 3, 4);
+    testConformanceRandomCNF(1000, 10, 4, 4);
+    testConformanceRandomCNF(1000, 12, 3, 4);
+    testConformanceRandomCNF(1000, 32, 8, 4);
+    testConformanceRandomCNF(1000, 50, 10, 4);
 
     auto stop = high_resolution_clock::now();
     auto durationMS = duration_cast<milliseconds>(stop - start);
@@ -238,8 +245,8 @@ int main(int argc, char const* argv[]) {
 
     // testDIMACSParse();
 
-    // testSimple1();
-    // testSimple2();
+    testSimple1();
+    testSimple2();
     testSimple3();
     testSimple4();
     testSimple5();
@@ -247,9 +254,11 @@ int main(int argc, char const* argv[]) {
     testSimple7();
 
     testCNF("benchmarks/random/random0.cnf", true);
-    // testCNF("benchmarks/random/random1.cnf", true);
-    // testCNF("benchmarks/random/random2.cnf", true);
-    // testCNF("benchmarks/random/random3.cnf", true);
+    testCNF("benchmarks/random/random1.cnf", true);
+    testCNF("benchmarks/random/random2.cnf", true);
+    testCNF("benchmarks/random/random3.cnf", true);
+    testCNF("benchmarks/random/random4.cnf", true);
+    testCNF("benchmarks/random/random5.cnf", true);
 
     // return 0;
 
@@ -277,20 +286,16 @@ int main(int argc, char const* argv[]) {
 
     // Harder.
     testCNF("benchmarks/flat50-115/flat50-1.cnf", true);
+    testCNF("benchmarks/flat50-115/flat50-2.cnf", true);
+    testCNF("benchmarks/flat50-115/flat50-3.cnf", true);
+    testCNF("benchmarks/cnf_samples/par8-1-c.cnf", true);
+    testCNF("benchmarks/cnf_samples/aim-100-1_6-no-1.cnf", false);
+    testCNF("benchmarks/cnf_samples/dubois20.cnf", false);
 
-
-    // Still too slow with current implementation.
-
-    // testCNF("benchmarks/flat50-115/flat50-2.cnf", true);
-    // testCNF("benchmarks/flat50-115/flat50-3.cnf", true);
-    // testCNF("benchmarks/cnf_samples/par8-1-c.cnf", true);
-    // testCNF("benchmarks/cnf_samples/aim-100-1_6-no-1.cnf", false);
-    // testCNF("benchmarks/cnf_samples/dubois20.cnf", false);
-
-    // CNF t1 = CNF({{"x", "y", "z"}, {"z"}});
-    // std::cout << "t1: " << t1.toString() << std::endl;
-    // auto t1p = t1.unitPropagate(Literal("z"));
-    // std::cout << "t1p: " << t1p.toString() << std::endl;
+    //
+    // Pigeonhole benchmark (UNSAT).
+    //
+    testCNF("benchmarks/pigeon-hole/hole6.cnf", false);
 
     return 0;
 }
