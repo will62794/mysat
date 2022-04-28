@@ -1277,7 +1277,7 @@ public:
 
     bool isSat(CNF f) {
         // TODO: Make this configurable.
-        return isSatCDCL(f);
+        // return isSatCDCL(f);
 
         LOG(DEBUG) << "checking isSat:" << f.toString();
 
@@ -1353,16 +1353,6 @@ public:
                 // The parent var is the one that has been assigned at this decision level.
                 varsAssignedAtCurrLevel.insert(currNode._parentVar);
 
-                // Initialize the antecedent graph with the existing variable assignments.
-                auto avars = currAssmt.getVals();
-                for (auto it = avars.begin(); it != avars.end(); it++) {
-                    antecedents[it->first] = -1;  // no predecessor.
-                    trail.push_back(Literal(it->first, !it->second));
-                    LOG(DEBUG) << "trail element " << it->first << "=" << it->second;
-
-                    varDecisionLevels[it->first] = currAssmt.getDecisionLevel(it->first);
-                }
-
                 while (fassigned.hasUnitClause()) {
                     // Also return the index of the clause that this variable is now unit in.
                     // A literal l is unit in a clause (l1 \/ ... \/ lk \/ l) if all l1..lk have
@@ -1377,13 +1367,6 @@ public:
                     fassigned = fassigned.unitPropagate(unitLit);
                     LOG(DEBUG) << "f assigned after unit prop round: " << fassigned.toString();
                     antecedents[unitLit.getVarName()] = unitClauseInd;
-
-                    // Save assignment to the trail.
-                    trail.push_back(unitLit);
-
-                    // Mark as assigned at this decision level.
-                    varsAssignedAtCurrLevel.insert(unitLit.getVarName());
-                    varDecisionLevels[unitLit.getVarName()] = currNode.getDecisionLevel();
                 }
                 LOG(DEBUG) << "current decision level: " << currNode.getDecisionLevel();
                 LOG(DEBUG) << "f after unit prop: " << fassigned.toString();
@@ -1392,146 +1375,7 @@ public:
                 for (auto v : varsAssignedAtCurrLevel) {
                     LOG(DEBUG) << "after unit prop, var assigned at curr level: " << v;
                 }
-
-                // TODO: Finish fleshing out antecedent graph and its use for deriving conflict
-                // clauses.
-                // std::cout << "antecedent graph:" << std::endl;
-                for (auto it = antecedents.begin(); it != antecedents.end(); it++) {
-                    // std::cout << it->first << " -> " << it->second << std::endl;
-
-                    std::string litVarName = it->first;
-                    int clauseInd = it->second;
-
-                    // Record predecessor variable assignments for each node.
-                    // TODO: Decide how to store this.
-                    if (clauseInd >= 0) {
-                        auto unitClause = currCNF.getClause(clauseInd);
-                        std::vector<std::string> anteVars;
-                        for (auto l : unitClause.getLiterals()) {
-                            if (l.getVarName() != litVarName) {
-                                anteVars.push_back(l.getVarName());
-                            }
-                        };
-                    }
-                }
-
-                LOG(DEBUG) << "trail:";
-                for (auto l : trail) {
-                    LOG(DEBUG) << l.toString();
-                }
-
-                // If a contradiction has been derived, apply conflict analysis.
-                if (fassigned.hasEmptyClause()) {
-
-                    numConflicts++;
-
-                    // If we have now encountered a conflict, we can now start
-                    // with the conflicting clause C, and pick the most recent
-                    // literal in it that was assigned, L, Then take the
-                    // antecedent of L, and compute resolve(C,L). This gives a
-                    // new clause C', which we can then continute the process
-                    // with. That is, find the most recent assigned literal
-                    // appearing in C', and then find its antecedent and do
-                    // resolution again. We should be able to find the most
-                    // recent assigned literal in a clause by walking backwards
-                    // through the trail (??)
-
-                    // Start with the conflicting clause.
-                    auto emptyCInd = fassigned.getEmptyClause();
-                    Clause currClause = currCNF.getClause(emptyCInd);
-                    LOG(DEBUG) << "!! conflict encountered, conflicting clause index: "
-                               << emptyCInd;
-
-                    // Walk backwards through the trail.
-                    int ti = trail.size() - 1;
-                    while (ti > 0) {
-                        auto lit = trail[ti];
-                        if (currClause.hasVariable(lit.getVarName())) {
-                            // This is the most recent var in trail that was assigned in this
-                            // clause.
-                            LOG(DEBUG) << "first assigned: " << lit.toString();
-
-                            // Then, figure out the antecedent clause for this variable.
-                            int anteInd = antecedents[lit.getVarName()];
-
-                            // Have reached a decision (non-forced) variable assignment in the
-                            // trail.
-                            if (anteInd < 0) {
-                                LOG(DEBUG) << "Reached decision variable.";
-                                break;
-                            }
-
-                            Clause ante = currCNF.getClause(anteInd);
-                            LOG(DEBUG) << "curr conflict clause: " << currClause.toString();
-                            LOG(DEBUG)
-                                << "antecedent: " << ante.toString() << " (c" << anteInd << ")";
-
-                            // Now, resolve the current clause with the antecedent.
-                            Clause resolvent = Clause::resolve(ante, currClause, lit.getVarName());
-                            LOG(DEBUG) << "resolvent: " << resolvent.toString();
-                            currClause = resolvent;
-
-                            // TODO (4/25/22): Once we're done resolving, we need to add the
-                            // discovered conflict clause as a learned clause, and then backjump
-                            // appropriately.
-
-                            // Termination condition for resolution: stop when
-                            // the current resolvent contains exactly one
-                            // literal whose value was assigned at the current
-                            // decision level.
-
-                            // Check for the number of variables assigned at this decision level
-                            // that appear in the current conflict clause.
-                            int numVarsFromCurrLevel = 0;
-                            for (auto v : currClause.getVariableSet()) {
-                                if (varsAssignedAtCurrLevel.find(v) !=
-                                    varsAssignedAtCurrLevel.end()) {
-                                    numVarsFromCurrLevel += 1;
-                                }
-                            }
-                            LOG(DEBUG)
-                                << "num vars from curr decision level: " << numVarsFromCurrLevel;
-
-                            if (numVarsFromCurrLevel == 1) {
-                                // Terminate.
-                                Clause learnedClause = currClause;
-                                learnedClauses.push_back(learnedClause);
-                                LOG(DEBUG) << "-> learned clause: " << learnedClause.toString();
-
-                                // We will backtrack to the "assertion level",
-                                // which is the second highest (i.e. second
-                                // deepest) level of any variable that appears
-                                // in the learned conflict clause.
-                                int levelHighest = -1;
-                                int levelSecondHighest = -1;
-                                for (auto l : learnedClause.getLiterals()) {
-                                    // Determine the decision level of this variable.
-                                    auto level = varDecisionLevels[l.getVarName()];
-                                    // LOG(DEBUG) << "level: " << level;
-                                    if (level > levelHighest) {
-                                        levelSecondHighest = levelHighest;
-                                        levelHighest = level;
-                                    } else if (level > levelSecondHighest &&
-                                               level != levelHighest) {
-                                        levelSecondHighest = level;
-                                    }
-                                }
-
-                                if (levelSecondHighest == -1) {
-                                    levelSecondHighest = levelHighest;
-                                }
-                                backjumpLevel = levelSecondHighest;
-                                currCNF.appendClause(learnedClause);
-                                break;
-                            }
-                        }
-                        ti--;
-                    }
-                }
-
-                LOG(DEBUG) << "backjump level: " << backjumpLevel;
             }
-
 
             // Record information for termination tree if enabled.
             // Mostly for debugging/visualization.
@@ -1544,51 +1388,6 @@ public:
                     currNode._currVar, currNode._assmt.toStringCompact(), fassigned.toString());
                 TreeEdge e = TreeEdge(from, to);
                 terminationTree.insert(e);
-            }
-
-
-            //
-            // Backjump to lower decision level if we ran conflict analysis!
-            //
-            if (backjumpLevel >= 0) {
-                LOG(DEBUG) << "current frontier stack:";
-                for (Context e : frontier) {
-                    LOG(DEBUG) << "  " << e._assmt.toString();
-                }
-
-                LOG(DEBUG) << "popping current levels on stack. ";
-
-                // Context with the assignments we backtrack past removed, that
-                // we will restart our search from.
-                Assignment assmtToRestartFrom = currAssmt;
-
-                // The stack records 'Context' objects, so we offset the backjump level by 1 to
-                // account for this.
-
-                // TODO: I don't think this backjump level calculation is correct.
-                int frontierBackjumpLevel = (backjumpLevel + 1);
-                while (frontier.back().getDecisionLevel() > frontierBackjumpLevel &&
-                       frontier.size() > 0) {
-                    LOG(DEBUG) << "popping " << frontier.back()._assmt.toString();
-
-                    // Clear this assignment.
-                    assmtToRestartFrom.unset(frontier.back()._currVar);
-
-                    frontier.pop_back();
-                }
-                // Restart the search process after backjumping.
-                LOG(DEBUG) << "Backjumping in search. ";
-
-                //
-                // TODO: Need to think more carefully about what needs to be done here.
-                //
-                // auto restartVar = varList.at(backjumpLevel);
-                // LOG(DEBUG) << "Backjumping to variable: " << restartVar << ", assignment: "
-                // << assmtToRestartFrom.toString(); Context ctxToRestartFrom(currCNF,
-                // restartVar, "", backjumpLevel, assmtToRestartFrom, {}, backjumpLevel);
-                // frontier.push_back(ctxToRestartFrom);
-
-                continue;
             }
 
             // if (fassigned.isEmpty()) {
