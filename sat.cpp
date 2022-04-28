@@ -1097,9 +1097,6 @@ public:
 
         while (true) {
 
-            // TODO: We need to run unit propagation after we've backjumped and start exploring
-            // again.
-
             // Store a mapping from each assigned variable back to the
             // index of the clause in which it became unit i.e. store a
             // pointer back to its "antecedent" clause. That is, the
