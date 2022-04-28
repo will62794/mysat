@@ -1,1 +1,1 @@
-Personal SAT solver implementation.
+Personal SAT solver implementation, with both DPLL and CDCL based techniques.
