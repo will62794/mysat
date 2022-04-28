@@ -37,7 +37,7 @@
     The SAT problem:
     \vspace{12pt}
 
-    \textit{Given a boolean formula in conjunctive normal form, determine whether there exists an assignment to the variables of the formula that makes the overall formula true.}
+    \textit{Given a boolean formula in conjunctive normal form (CNF), determine whether there exists an assignment to the variables of the formula that makes the overall formula true.}
 
     \pause
     \vspace{12pt}
@@ -123,7 +123,7 @@
         \item DPLL is a rather naive algorithm
         \item An extension to this basic framework is to \textit{learn from conflicts} 
         \item When you encounter a conflict in the search tree, \textit{learn} a clause that prevents you from making the similar mistakes again
-        \item This fundamental approch is known as \textit{conflict-driven clause learning} (CDCL) and started being employed in SAT solvers around the late 90s and early 2000s.
+        \item This fundamental approach is known as \textit{conflict-driven clause learning} (CDCL) and started being employed in SAT solvers around the late 90s and early 2000s.
         \item In addition, employ \textit{non-chronological backtracking}
     \end{itemize}
 \end{frame}
@@ -194,18 +194,36 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Future Extensions}
+\begin{frame}{Future Extensions and Learning Heuristics}
     \begin{itemize}
-        \item Resolution proofs
-        \item Variable ordering heuristics
-        \item Learning heuristics
-        \item Learning end to end SAT solver (neuroSAT)
+        \item Modern CDCL based SAT solvers employ many heuristics
+            \begin{itemize}
+                \item Variable ordering
+                \item Clause deletion policies
+            \end{itemize}
+        \item Often these are ``expertly tuned'' heuristics
+        \item \textit{CrystalBall} \cite{2019sooscrystalball}: Possible to learn better heuristics from data on SAT solver executions? 
     \end{itemize}
 \end{frame}
 
+\begin{frame}
+    \begin{itemize}
+        \item CrystalBall
+    \end{itemize}
+\end{frame}
+
+% \begin{frame}{Future Extensions and Learning Heuristics}
+%     \begin{itemize}
+%         \item Resolution proofs
+%         \item Variable ordering heuristics
+%         \item Learning heuristics
+%         \item Learning end to end SAT solver (neuroSAT)
+%     \end{itemize}
+% \end{frame}
+
 \begin{frame}{}
     \begin{center}
-        \large
+        \Large
         Questions?
     \end{center}
 \end{frame}
