@@ -825,6 +825,12 @@ private:
     // Number of UNSAT conflicts encountered during search.
     int numConflicts = 0;
 
+    //
+    // CDCL data structures.
+    //
+    std::vector<std::pair<Literal, int>> currTrail;
+    Assignment currTrailAssmt;
+
 public:
     Solver() {}
 
@@ -893,6 +899,38 @@ public:
         return _isSatBruteForceRec(f, varList, 0, initAssign);
     }
 
+    CNF cdclUnitPropagation(CNF f,
+                            int currDecisionLevel,
+                            std::map<std::string, int>& antecedents,
+                            std::map<std::string, int>& varDecisionLevels,
+                            std::set<std::string>& varsAssignedAtCurrLevel) {
+        while (f.hasUnitClause()) {
+            // Also return the index of the clause that this variable is now unit in.
+            // A literal l is unit in a clause (l1 \/ ... \/ lk \/ l) if all l1..lk have
+            // been assigned false.
+            Literal unitLit = f.getUnitLiteral();
+            int unitClauseInd = f.getUnitClause();
+
+            // Assign the unit literal's variable to truthify the unit clause
+            // and simplify the formula based on this assignment.
+            // currAssmt.set(unitLit.getVarName(), !unitLit.isNegated(),
+            // currNode.getDecisionLevel());
+            f = f.unitPropagate(unitLit);
+            LOG(DEBUG) << "f assigned after unit prop round: " << f.toString();
+            antecedents[unitLit.getVarName()] = unitClauseInd;
+
+            // Save assignment to the trail.
+            currTrail.push_back({unitLit, currDecisionLevel});
+
+            // Mark as assigned at this decision level.
+            varsAssignedAtCurrLevel.insert(unitLit.getVarName());
+            varDecisionLevels[unitLit.getVarName()] = currDecisionLevel;
+
+            currTrailAssmt.set(unitLit.getVarName(), !unitLit.isNegated());
+        }
+        return f;
+    }
+
     bool isSatCDCL(CNF f) {
         LOG(DEBUG) << "checking isSat CDCL:" << f.toString();
 
@@ -902,8 +940,8 @@ public:
         std::vector<Context> frontier;
 
         // Sequence of currently made assignments, along with decision level.
-        std::vector<std::pair<Literal, int>> trail;
-        Assignment currAssmt;
+        // std::vector<std::pair<Literal, int>> currTrail;
+        // Assignment currTrailAssmt;
 
         std::map<std::string, bool> initVals;
         int initDecisionLevel = -1;
@@ -920,40 +958,29 @@ public:
         // currF.assign(currAssmt);
         LOG(DEBUG) << "f after assignment: " << fassigned.toString();
 
-        // Store a mapping from each assigned variable back to the
-        // index of the clause in which it became unit i.e. store a
-        // pointer back to its "antecedent" clause. That is, the
-        // clause that "caused" it be assigned via unit resolution.
-        std::map<std::string, int> antecedents;
-        // std::vector<Literal> trail;
-        // The decision levels of each assigned variable.
-        std::map<std::string, int> varDecisionLevels;
-
-        // Set of variables that are assigned at the current decision
-        // level, either by an explicit decision, or as an assignment
-        // derived via unit propagation.
-        std::set<std::string> varsAssignedAtCurrLevel;
-        // The parent var is the one that has been assigned at this decision level.
-        // varsAssignedAtCurrLevel.insert(currNode._parentVar);
-
-        // Initialize the antecedent graph with the existing variable assignments.
-        auto avars = currAssmt.getVals();
-        for (auto it = avars.begin(); it != avars.end(); it++) {
-            antecedents[it->first] = -1;  // no predecessor.
-            // trail.push_back(Literal(it->first, !it->second));
-            LOG(DEBUG) << "trail element " << it->first << "=" << it->second;
-
-            // varDecisionLevels[it->first] = currAssmt.getDecisionLevel(it->first);
-        }
-
-
         std::set<std::string> unchosenVars = f.getVariableSet();
 
         // while (true) {
         for (int j = 0; j < 8; j++) {
 
-            // TODO: We need to run unit propagation after we've backjumped and start exploring again.
+            // TODO: We need to run unit propagation after we've backjumped and start exploring
+            // again.
 
+            // Store a mapping from each assigned variable back to the
+            // index of the clause in which it became unit i.e. store a
+            // pointer back to its "antecedent" clause. That is, the
+            // clause that "caused" it be assigned via unit resolution.
+            std::map<std::string, int> antecedents;
+            // std::vector<Literal> trail;
+            // The decision levels of each assigned variable.
+            std::map<std::string, int> varDecisionLevels;
+
+            // Set of variables that are assigned at the current decision
+            // level, either by an explicit decision, or as an assignment
+            // derived via unit propagation.
+            std::set<std::string> varsAssignedAtCurrLevel;
+            // The parent var is the one that has been assigned at this decision level.
+            // varsAssignedAtCurrLevel.insert(currNode._parentVar);
 
             // Extend the trail with a new variable assignment, and update the current assignment.
             LOG(DEBUG) << "### choosing new variable assignment";
@@ -962,63 +989,55 @@ public:
             std::string chosenVar = *it;
             unchosenVars.erase(it);
             auto newLit = Literal(chosenVar);
-            trail.push_back({newLit, currDecisionLevel});
-            currAssmt.set(chosenVar, !newLit.isNegated());
+            currTrail.push_back({newLit, currDecisionLevel});
+            currTrailAssmt.set(chosenVar, !newLit.isNegated());
             varDecisionLevels[chosenVar] = currDecisionLevel;
 
             LOG(DEBUG) << "extending trail with " << newLit.toString();
-
             LOG(DEBUG) << "current trail:";
-            for (auto l : trail) {
+            for (auto l : currTrail) {
                 LOG(DEBUG) << l.first.toString() << " (l" << l.second << ")";
             }
 
             CNF currF = currCNF;
-            CNF fassigned = currF.assign(currAssmt);
+            CNF fassigned = currF.assign(currTrailAssmt);
+            LOG(DEBUG) << "f after assignment: " << fassigned.toString();
             if (fassigned.isSatisfied()) {
                 // If we determined that the formula is necessarily satisfiable
                 // under the current partial assignment, then we can fill in
                 // arbitrary values for the remaining, unassigned variables.
                 for (auto v : varList) {
                     // Assign a value to the currently unassigned variable.
-                    if (!currAssmt.hasVar(v)) {
+                    if (!currTrailAssmt.hasVar(v)) {
                         bool arbitraryVal = true;
-                        currAssmt.set(v, arbitraryVal);
+                        currTrailAssmt.set(v, arbitraryVal);
                     }
                 }
-                _currAssignment = currAssmt;
+                _currAssignment = currTrailAssmt;
                 return true;
             }
 
             // Apply unit propagation.
             LOG(DEBUG) << "running unit propagation for CDCL";
-            while (fassigned.hasUnitClause()) {
-                // Also return the index of the clause that this variable is now unit in.
-                // A literal l is unit in a clause (l1 \/ ... \/ lk \/ l) if all l1..lk have
-                // been assigned false.
-                auto unitLit = fassigned.getUnitLiteral();
-                auto unitClauseInd = fassigned.getUnitClause();
 
-                // Assign the unit literal's variable to truthify the unit clause
-                // and simplify the formula based on this assignment.
-                // currAssmt.set(unitLit.getVarName(), !unitLit.isNegated(),
-                // currNode.getDecisionLevel());
-                fassigned = fassigned.unitPropagate(unitLit);
-                LOG(DEBUG) << "f assigned after unit prop round: " << fassigned.toString();
-                antecedents[unitLit.getVarName()] = unitClauseInd;
 
-                // Save assignment to the trail.
-                trail.push_back({unitLit, currDecisionLevel});
-
-                // Mark as assigned at this decision level.
-                varsAssignedAtCurrLevel.insert(unitLit.getVarName());
-                varDecisionLevels[chosenVar] = currDecisionLevel;
-                // varDecisionLevels[unitLit.getVarName()] = currNode.getDecisionLevel();
-                currAssmt.set(unitLit.getVarName(), !unitLit.isNegated());
+            // Initialize the antecedent graph with the existing variable assignments.
+            auto avars = currTrailAssmt.getVals();
+            for (auto it = avars.begin(); it != avars.end(); it++) {
+                antecedents[it->first] = -1;  // no predecessor.
+                // trail.push_back(Literal(it->first, !it->second));
+                LOG(DEBUG) << "trail element " << it->first << "=" << it->second;
+                // varDecisionLevels[it->first] = currAssmt.getDecisionLevel(it->first);
             }
-            // LOG(DEBUG) << "current decision level: " << currNode.getDecisionLevel();
+
+            fassigned = cdclUnitPropagation(fassigned,
+                                            currDecisionLevel,
+                                            antecedents,
+                                            varDecisionLevels,
+                                            varsAssignedAtCurrLevel);
+
             LOG(DEBUG) << "f after unit prop: " << fassigned.toString();
-            LOG(DEBUG) << "curr assignment after unit prop: " << currAssmt.toString();
+            LOG(DEBUG) << "curr assignment after unit prop: " << currTrailAssmt.toString();
 
             int backjumpLevel = -1;
             if (fassigned.hasEmptyClause()) {
@@ -1042,10 +1061,10 @@ public:
                 LOG(DEBUG) << "!! conflict encountered, conflicting clause index: " << emptyCInd;
 
                 // Walk backwards through the trail.
-                int ti = trail.size() - 1;
+                int ti = currTrail.size() - 1;
                 while (ti > 0) {
-                    auto lit = trail[ti].first;
-                    auto litLevel = trail[ti].second;
+                    auto lit = currTrail[ti].first;
+                    auto litLevel = currTrail[ti].second;
                     if (currClause.hasVariable(lit.getVarName())) {
                         // This is the most recent var in trail that was assigned in this
                         // clause.
@@ -1132,7 +1151,7 @@ public:
                 LOG(DEBUG) << "Backjumping to level " << backjumpLevel;
 
                 LOG(DEBUG) << "current trail stack:";
-                for (auto l : trail) {
+                for (auto l : currTrail) {
                     LOG(DEBUG) << l.first.toString() << " (l" << l.second << ")";
                 }
 
@@ -1140,7 +1159,7 @@ public:
 
                 // Context with the assignments we backtrack past removed, that
                 // we will restart our search from.
-                Assignment assmtToRestartFrom = currAssmt;
+                Assignment assmtToRestartFrom = currTrailAssmt;
 
                 // The stack records 'Context' objects, so we offset the backjump level by 1 to
                 // account for this.
@@ -1148,25 +1167,31 @@ public:
                 // TODO: I don't think this backjump level calculation is correct.
                 // int frontierBackjumpLevel = (backjumpLevel + 1);
                 int frontierBackjumpLevel = backjumpLevel;
-                while (trail.back().second > frontierBackjumpLevel && trail.size() > 0) {
+                while (currTrail.back().second > frontierBackjumpLevel && currTrail.size() > 0) {
                     // while (frontier.back().getDecisionLevel() > frontierBackjumpLevel &&
                     //    frontier.size() > 0) {
                     // LOG(DEBUG) << "popping " << frontier.back()._assmt.toString();
 
-                    LOG(DEBUG) << "popping " << trail.back().first.toString() << ", (l"
-                               << trail.back().second << ")";
+                    LOG(DEBUG) << "popping " << currTrail.back().first.toString() << ", (l"
+                               << currTrail.back().second << ")";
 
                     // Clear this assignment.
                     // assmtToRestartFrom.unset(frontier.back()._currVar);
-                    currAssmt.unset(trail.back().first.getVarName());
+                    currTrailAssmt.unset(currTrail.back().first.getVarName());
 
                     // Add this variable back into the set of unchosen vars.
-                    unchosenVars.insert(trail.back().first.getVarName());
+                    unchosenVars.insert(currTrail.back().first.getVarName());
 
                     // frontier.pop_back();
-                    trail.pop_back();
-                    LOG(DEBUG) << "newAssmt: " << currAssmt.toString();
+                    currTrail.pop_back();
+                    LOG(DEBUG) << "newAssmt: " << currTrailAssmt.toString();
                 }
+
+                // if(j>=7){
+                // continue;
+                // }
+                // j++;
+                // goto unitprop;
             } else {
                 // If we didn't backjump, proceed to the next decision level.
                 currDecisionLevel++;
