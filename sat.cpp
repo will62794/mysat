@@ -1074,16 +1074,9 @@ public:
         // The set of tree nodes in the frontier i.e. discovered but not explored yet.
         std::vector<Context> frontier;
 
-        // Sequence of currently made assignments, along with decision level.
-        // std::vector<std::pair<Literal, int>> currTrail;
-        // Assignment currTrailAssmt;
-
         std::map<std::string, bool> initVals;
         int initDecisionLevel = -1;
-        // frontier.push_back(Context(f, varList.at(0), "root", 0, initVals, {},
-        // initDecisionLevel));
 
-        // int currDecisionLevel = 0;
         int currDecisionLevel = -1;
 
         // Current formula, with potentially learned clauses added over time.
@@ -1091,8 +1084,6 @@ public:
 
         CNF currF = currCNF;
         CNF fassigned = currF;
-        // currF.assign(currAssmt);
-        LOG(DEBUG) << "f after assignment: " << fassigned.toString();
 
         std::set<std::string> unchosenVars = f.getVariableSet();
 
@@ -1113,8 +1104,6 @@ public:
             // level, either by an explicit decision, or as an assignment
             // derived via unit propagation.
             std::set<std::string> varsAssignedAtCurrLevel;
-            // The parent var is the one that has been assigned at this decision level.
-            // varsAssignedAtCurrLevel.insert(currNode._parentVar);
 
             // Extend the trail with a new variable assignment, and update the current
             // assignment.
@@ -1157,9 +1146,7 @@ public:
             auto avars = currTrailAssmt.getVals();
             for (auto it = avars.begin(); it != avars.end(); it++) {
                 antecedents[it->first] = -1;  // no predecessor.
-                // trail.push_back(Literal(it->first, !it->second));
                 LOG(DEBUG) << "trail element " << it->first << "=" << it->second;
-                // varDecisionLevels[it->first] = currAssmt.getDecisionLevel(it->first);
             }
 
             // Apply unit propagation.
@@ -1248,25 +1235,16 @@ public:
 
                 LOG(DEBUG) << "popping off items on trail stack. ";
 
-                // TODO: I don't think this backjump level calculation is correct.
-                // int frontierBackjumpLevel = (backjumpLevel + 1);
-                int frontierBackjumpLevel = backjumpLevel;
-                while (currTrail.back().second > frontierBackjumpLevel && currTrail.size() > 0) {
-                    // while (frontier.back().getDecisionLevel() > frontierBackjumpLevel &&
-                    //    frontier.size() > 0) {
-                    // LOG(DEBUG) << "popping " << frontier.back()._assmt.toString();
-
+                while (currTrail.back().second > backjumpLevel && currTrail.size() > 0) {
                     LOG(DEBUG) << "popping " << currTrail.back().first.toString() << ", (l"
                                << currTrail.back().second << ")";
 
                     // Clear this assignment.
-                    // assmtToRestartFrom.unset(frontier.back()._currVar);
                     currTrailAssmt.unset(currTrail.back().first.getVarName());
 
                     // Add this variable back into the set of unchosen vars.
                     unchosenVars.insert(currTrail.back().first.getVarName());
 
-                    // frontier.pop_back();
                     currTrail.pop_back();
                     LOG(DEBUG) << "newAssmt: " << currTrailAssmt.toString();
                 }
