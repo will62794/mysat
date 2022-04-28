@@ -1016,7 +1016,6 @@ public:
                     // Terminate.
                     Clause learnedClause = currClause;
                     learnedClauses.push_back(learnedClause);
-                    LOG(DEBUG) << "**** learned clause: " << learnedClause.toString();
 
                     // We will backtrack to the "assertion level",
                     // which is the second highest (i.e. second
@@ -1188,7 +1187,24 @@ public:
                     currCNF, currClause, antecedents, varDecisionLevels, varsAssignedAtCurrLevel);
                 Clause learnedClause = ret.first;
                 backjumpLevel = ret.second;
-                currCNF.appendClause(learnedClause);
+                if (backjumpLevel >= 0) {
+                    currCNF.appendClause(learnedClause);
+                }
+
+                LOG(DEBUG) << "**** learned clause: " << learnedClause.toString();
+                LOG(DEBUG) << "**** backjump level: " << backjumpLevel;
+
+                if (backjumpLevel == -1) {
+                    // Pop all items off the trail and backjump to restart the whole search.
+                    while (currTrail.size() > 0) {
+                        currTrail.pop_back();
+                    }
+                    backjumped = true;
+                    currDecisionLevel = backjumpLevel;
+                    currTrailAssmt = Assignment();
+                    unchosenVars = f.getVariableSet();
+                    continue;
+                }
             }
 
             // Backjump to lower decision level if necessary.
