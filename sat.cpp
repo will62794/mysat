@@ -906,7 +906,8 @@ public:
                             int currDecisionLevel,
                             std::map<std::string, int>& antecedents,
                             std::map<std::string, int>& varDecisionLevels,
-                            std::set<std::string>& varsAssignedAtCurrLevel) {
+                            std::set<std::string>& varsAssignedAtCurrLevel,
+                            std::set<std::string>& unchosenVars) {
         while (f.hasUnitClause()) {
             // Also return the index of the clause that this variable is now unit in.
             // A literal l is unit in a clause (l1 \/ ... \/ lk \/ l) if all l1..lk have
@@ -924,6 +925,10 @@ public:
 
             // Save assignment to the trail.
             currTrail.push_back({unitLit, currDecisionLevel});
+
+            if (unchosenVars.find(unitLit.getVarName()) != unchosenVars.end()) {
+                unchosenVars.erase(unitLit.getVarName());
+            }
 
             // Mark as assigned at this decision level.
             varsAssignedAtCurrLevel.insert(unitLit.getVarName());
@@ -966,9 +971,10 @@ public:
 
         // Walk backwards through the trail.
         int ti = currTrail.size() - 1;
-        while (ti > 0) {
+        while (ti >= 0) {
             auto lit = currTrail[ti].first;
             auto litLevel = currTrail[ti].second;
+            LOG(DEBUG) << "walking back trail, at literal: " << lit.toString();
             if (currClause.hasVariable(lit.getVarName())) {
                 // This is the most recent var in trail that was assigned in this
                 // clause.
@@ -978,20 +984,21 @@ public:
                 int anteInd = antecedents[lit.getVarName()];
 
                 // Have reached a decision (non-forced) variable assignment in the
-                // trail.
+                // trail. So, we can't resolve any further.
                 if (anteInd < 0) {
                     LOG(DEBUG) << "Reached decision variable.";
-                    break;
+                    LOG(DEBUG) << "curr clause: " << currClause.toString();
+                } else {
+
+                    Clause ante = f.getClause(anteInd);
+                    LOG(DEBUG) << "curr conflict clause: " << currClause.toString();
+                    LOG(DEBUG) << "antecedent: " << ante.toString() << " (c" << anteInd << ")";
+
+                    // Now, resolve the current clause with the antecedent.
+                    Clause resolvent = Clause::resolve(ante, currClause, lit.getVarName());
+                    LOG(DEBUG) << "resolvent: " << resolvent.toString();
+                    currClause = resolvent;
                 }
-
-                Clause ante = f.getClause(anteInd);
-                LOG(DEBUG) << "curr conflict clause: " << currClause.toString();
-                LOG(DEBUG) << "antecedent: " << ante.toString() << " (c" << anteInd << ")";
-
-                // Now, resolve the current clause with the antecedent.
-                Clause resolvent = Clause::resolve(ante, currClause, lit.getVarName());
-                LOG(DEBUG) << "resolvent: " << resolvent.toString();
-                currClause = resolvent;
 
                 // TODO (4/25/22): Once we're done resolving, we need to add the
                 // discovered conflict clause as a learned clause, and then backjump
@@ -1021,12 +1028,19 @@ public:
                     // which is the second highest (i.e. second
                     // deepest) level of any variable that appears
                     // in the learned conflict clause.
+
+                    // If there is just one literal in the learned clause, then the assertion level
+                    // is -1, by definition.
+                    if (learnedClause.getLiterals().size() == 1) {
+                        return {learnedClause, -1};
+                    }
+
                     int levelHighest = -1;
                     int levelSecondHighest = -1;
                     for (auto l : learnedClause.getLiterals()) {
                         // Determine the decision level of this variable.
                         auto level = varDecisionLevels[l.getVarName()];
-                        // LOG(DEBUG) << "level: " << level;
+                        LOG(DEBUG) << "level: " << level;
                         if (level > levelHighest) {
                             levelSecondHighest = levelHighest;
                             levelHighest = level;
@@ -1066,7 +1080,8 @@ public:
         // frontier.push_back(Context(f, varList.at(0), "root", 0, initVals, {},
         // initDecisionLevel));
 
-        int currDecisionLevel = 0;
+        // int currDecisionLevel = 0;
+        int currDecisionLevel = -1;
 
         // Current formula, with potentially learned clauses added over time.
         CNF currCNF = f;
@@ -1080,8 +1095,7 @@ public:
 
         bool backjumped = false;
 
-        // while (true) {
-        for (int j = 0; j < 8; j++) {
+        while (true) {
 
             // TODO: We need to run unit propagation after we've backjumped and start exploring
             // again.
@@ -1109,7 +1123,7 @@ public:
             // propagation.
             LOG(DEBUG) << "---> current f: " << currCNF.toString();
             LOG(DEBUG) << "current decision level: " << currDecisionLevel;
-            if (!backjumped) {
+            if (!backjumped && currDecisionLevel >= 0) {
                 LOG(DEBUG) << "## choosing new variable assignment";
                 auto it = unchosenVars.begin();
                 std::string chosenVar = *it;
@@ -1125,7 +1139,7 @@ public:
                     LOG(DEBUG) << l.first.toString() << " (l" << l.second << ")";
                 }
             } else {
-                LOG(DEBUG) << "just backjumped, so not choosing new variable yet.";
+                LOG(DEBUG) << "just backjumped or at dl=-1, so not choosing new variable yet.";
             }
 
             // Update the current set of variables assigned at this decision level.
@@ -1138,20 +1152,6 @@ public:
             CNF currF = currCNF;
             CNF fassigned = currF.assign(currTrailAssmt);
             LOG(DEBUG) << "f after assignment: " << fassigned.toString();
-            if (fassigned.isSatisfied()) {
-                // If we determined that the formula is necessarily satisfiable
-                // under the current partial assignment, then we can fill in
-                // arbitrary values for the remaining, unassigned variables.
-                for (auto v : varList) {
-                    // Assign a value to the currently unassigned variable.
-                    if (!currTrailAssmt.hasVar(v)) {
-                        bool arbitraryVal = true;
-                        currTrailAssmt.set(v, arbitraryVal);
-                    }
-                }
-                _currAssignment = currTrailAssmt;
-                return true;
-            }
 
             // Initialize the antecedent graph with the existing variable assignments.
             auto avars = currTrailAssmt.getVals();
@@ -1168,10 +1168,27 @@ public:
                                             currDecisionLevel,
                                             antecedents,
                                             varDecisionLevels,
-                                            varsAssignedAtCurrLevel);
+                                            varsAssignedAtCurrLevel,
+                                            unchosenVars);
 
             LOG(DEBUG) << "f after unit prop: " << fassigned.toString();
             LOG(DEBUG) << "curr assignment after unit prop: " << currTrailAssmt.toString();
+
+            // Check for satisfied formula.
+            if (fassigned.isSatisfied()) {
+                // If we determined that the formula is necessarily satisfiable
+                // under the current partial assignment, then we can fill in
+                // arbitrary values for the remaining, unassigned variables.
+                for (auto v : varList) {
+                    // Assign a value to the currently unassigned variable.
+                    if (!currTrailAssmt.hasVar(v)) {
+                        bool arbitraryVal = true;
+                        currTrailAssmt.set(v, arbitraryVal);
+                    }
+                }
+                _currAssignment = currTrailAssmt;
+                return true;
+            }
 
             // Conflict analysis. Learn a clause and determine backjump level.
             int backjumpLevel = -1;
@@ -1187,7 +1204,8 @@ public:
                     currCNF, currClause, antecedents, varDecisionLevels, varsAssignedAtCurrLevel);
                 Clause learnedClause = ret.first;
                 backjumpLevel = ret.second;
-                if (backjumpLevel >= 0) {
+                // Don't learn a trivial clause.
+                if (!learnedClause.isTrue()) {
                     currCNF.appendClause(learnedClause);
                 }
 
@@ -1205,6 +1223,11 @@ public:
                     unchosenVars = f.getVariableSet();
                     continue;
                 }
+            } else {
+                // If no conflict exists, then proceed to the next decision level.
+                currDecisionLevel++;
+                backjumped = false;
+                continue;
             }
 
             // Backjump to lower decision level if necessary.
@@ -1241,11 +1264,6 @@ public:
                 }
                 backjumped = true;
                 currDecisionLevel = backjumpLevel;
-
-            } else {
-                // If we didn't backjump, proceed to the next decision level.
-                currDecisionLevel++;
-                backjumped = false;
             }
         }
 
@@ -1621,6 +1639,8 @@ public:
 
 
     bool isSat(CNF f) {
+        return isSatCDCL(f);
+
         LOG(DEBUG) << "checking isSat:" << f.toString();
 
         std::vector<std::string> varList = f.getVariableList();
