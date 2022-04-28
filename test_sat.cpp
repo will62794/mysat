@@ -329,6 +329,8 @@ int main(int argc, char const* argv[]) {
     testCNF("benchmarks/flat30-60/flat30-4.cnf", true);
     testCNF("benchmarks/flat30-60/flat30-5.cnf", true);
     testCNF("benchmarks/flat30-60/flat30-6.cnf", true);
+    testCNF("benchmarks/flat30-60/flat30-7.cnf", true);
+    testCNF("benchmarks/flat30-60/flat30-8.cnf", true);
 
     // Harder.
     testCNF("benchmarks/flat50-115/flat50-1.cnf", true);
