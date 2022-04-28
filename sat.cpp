@@ -1173,6 +1173,7 @@ public:
 
             // Check for satisfied formula.
             if (fassigned.isSatisfied()) {
+
                 // If we determined that the formula is necessarily satisfiable
                 // under the current partial assignment, then we can fill in
                 // arbitrary values for the remaining, unassigned variables.
@@ -1183,8 +1184,15 @@ public:
                         currTrailAssmt.set(v, arbitraryVal);
                     }
                 }
+                LOG(DEBUG) << "found SAT assignment! " << currTrailAssmt.toString();
                 _currAssignment = currTrailAssmt;
                 return true;
+            }
+
+            // If there is a conflict and we are at decision level -1, then return UNSAT.
+            if (fassigned.hasEmptyClause() && currDecisionLevel == -1) {
+                LOG(DEBUG) << "determined UNSAT!";
+                return false;
             }
 
             // Conflict analysis. Learn a clause and determine backjump level.
@@ -1636,6 +1644,7 @@ public:
 
 
     bool isSat(CNF f) {
+        // TODO: Make this configurable.
         return isSatCDCL(f);
 
         LOG(DEBUG) << "checking isSat:" << f.toString();

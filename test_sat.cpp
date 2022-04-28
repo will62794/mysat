@@ -130,6 +130,7 @@ void testSimple3() {
 void testSimple4() {
     Solver solver = Solver();
     CNF ct1 = CNF({{"x0", "~x0"}, {"~x1"}});
+    std::cout << ct1.toDIMACS();
     assert(solver.isSatBruteForce(ct1) == solver.isSat(ct1));
     std::cout << "num conflicts: " << solver.getNumConflicts() << std::endl;
     std::cout << solver.getTerminationTreeDOT();
@@ -138,6 +139,7 @@ void testSimple4() {
 void testSimple5() {
     Solver solver = Solver();
     CNF ct1 = CNF({{"x1"}, {"x2", "~x0"}});
+    std::cout << ct1.toDIMACS();
     assert(solver.isSatBruteForce(ct1) == solver.isSat(ct1));
     std::cout << "num conflicts: " << solver.getNumConflicts() << std::endl;
     std::cout << solver.getTerminationTreeDOT();
@@ -146,6 +148,7 @@ void testSimple5() {
 void testSimple6() {
     Solver solver = Solver();
     CNF ct1 = CNF({{"~x1", "~x3"}, {"~x0"}, {"x0", "x2"}, {"~x2"}});
+    std::cout << ct1.toDIMACS();
     assert(solver.isSatBruteForce(ct1) == solver.isSat(ct1));
     std::cout << "num conflicts: " << solver.getNumConflicts() << std::endl;
     std::cout << solver.getTerminationTreeDOT();
@@ -212,11 +215,12 @@ void testConformance() {
     auto start = high_resolution_clock::now();
 
     // Small clause size.
-    testConformanceRandomCNF(300, 1, 2, 2);
-    testConformanceRandomCNF(300, 2, 2, 2);
-    testConformanceRandomCNF(300, 2, 3, 2);
-    testConformanceRandomCNF(300, 4, 4, 2);
-    testConformanceRandomCNF(300, 8, 4, 2);
+    testConformanceRandomCNF(500, 1, 2, 2);
+    testConformanceRandomCNF(500, 2, 2, 2);
+    testConformanceRandomCNF(500, 2, 3, 2);
+    testConformanceRandomCNF(500, 4, 4, 2);
+    testConformanceRandomCNF(500, 6, 4, 2);
+    testConformanceRandomCNF(500, 8, 4, 2);
 
     // Larger clause size.
     testConformanceRandomCNF(1000, 4, 3, 3);
@@ -293,6 +297,10 @@ int main(int argc, char const* argv[]) {
     testSimple5();
     testSimple6();
     testSimple7();
+    testSimple8();
+    testSimple9();
+    testSimple10();
+    testSimple11();
 
     testCNF("benchmarks/random/random0.cnf", true);
     testCNF("benchmarks/random/random1.cnf", true);
@@ -311,7 +319,7 @@ int main(int argc, char const* argv[]) {
     el::Loggers::reconfigureLogger("default", defaultConf);
 
 
-    testConformance();
+    // testConformance();
 
     testCNF("benchmarks/cnf_samples/aim-50-1_6-yes1-4.cnf", true);
 
