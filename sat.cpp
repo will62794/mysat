@@ -819,6 +819,9 @@ private:
     bool enableUnitPropagation = true;
     bool recordTerminationTree = true;
 
+    // Flag for enabling CDCL based solving.
+    bool useCDCL = true;
+
     // Current set of clauses learned by CDCL.
     std::vector<Clause> learnedClauses;
 
@@ -1276,8 +1279,9 @@ public:
     }
 
     bool isSat(CNF f) {
-        // TODO: Make this configurable.
-        // return isSatCDCL(f);
+        if(useCDCL){
+            return isSatCDCL(f);
+        }
 
         LOG(DEBUG) << "checking isSat:" << f.toString();
 
