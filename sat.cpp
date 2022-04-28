@@ -828,7 +828,10 @@ private:
     //
     // CDCL data structures.
     //
+
+    // Trail of assigned literals along with their decision levels.
     std::vector<std::pair<Literal, int>> currTrail;
+    // Current assignment, incorporating all assignments made on the current trail.
     Assignment currTrailAssmt;
 
 public:
@@ -1013,7 +1016,7 @@ public:
                     // Terminate.
                     Clause learnedClause = currClause;
                     learnedClauses.push_back(learnedClause);
-                    LOG(DEBUG) << "-> learned clause: " << learnedClause.toString();
+                    LOG(DEBUG) << "**** learned clause: " << learnedClause.toString();
 
                     // We will backtrack to the "assertion level",
                     // which is the second highest (i.e. second
@@ -1076,6 +1079,8 @@ public:
 
         std::set<std::string> unchosenVars = f.getVariableSet();
 
+        bool backjumped = false;
+
         // while (true) {
         for (int j = 0; j < 8; j++) {
 
@@ -1100,20 +1105,35 @@ public:
 
             // Extend the trail with a new variable assignment, and update the current
             // assignment.
-            LOG(DEBUG) << "### choosing new variable assignment";
-            LOG(DEBUG) << "current f: " << currCNF.toString();
-            auto it = unchosenVars.begin();
-            std::string chosenVar = *it;
-            unchosenVars.erase(it);
-            auto newLit = Literal(chosenVar);
-            currTrail.push_back({newLit, currDecisionLevel});
-            currTrailAssmt.set(chosenVar, !newLit.isNegated());
-            varDecisionLevels[chosenVar] = currDecisionLevel;
 
-            LOG(DEBUG) << "extending trail with " << newLit.toString();
-            LOG(DEBUG) << "current trail:";
+            // If we just backjumped here, don't assign a new variable yet. First, apply unit
+            // propagation.
+            LOG(DEBUG) << "---> current f: " << currCNF.toString();
+            LOG(DEBUG) << "current decision level: " << currDecisionLevel;
+            if (!backjumped) {
+                LOG(DEBUG) << "## choosing new variable assignment";
+                auto it = unchosenVars.begin();
+                std::string chosenVar = *it;
+                unchosenVars.erase(it);
+                auto newLit = Literal(chosenVar);
+                currTrail.push_back({newLit, currDecisionLevel});
+                currTrailAssmt.set(chosenVar, !newLit.isNegated());
+                varDecisionLevels[chosenVar] = currDecisionLevel;
+
+                LOG(DEBUG) << "extending trail with " << newLit.toString();
+                LOG(DEBUG) << "current trail:";
+                for (auto l : currTrail) {
+                    LOG(DEBUG) << l.first.toString() << " (l" << l.second << ")";
+                }
+            } else {
+                LOG(DEBUG) << "just backjumped, so not choosing new variable yet.";
+            }
+
+            // Update the current set of variables assigned at this decision level.
             for (auto l : currTrail) {
-                LOG(DEBUG) << l.first.toString() << " (l" << l.second << ")";
+                if (l.second == currDecisionLevel) {
+                    varsAssignedAtCurrLevel.insert(l.first.getVarName());
+                }
             }
 
             CNF currF = currCNF;
@@ -1203,15 +1223,13 @@ public:
                     currTrail.pop_back();
                     LOG(DEBUG) << "newAssmt: " << currTrailAssmt.toString();
                 }
+                backjumped = true;
+                currDecisionLevel = backjumpLevel;
 
-                // if(j>=7){
-                // continue;
-                // }
-                // j++;
-                // goto unitprop;
             } else {
                 // If we didn't backjump, proceed to the next decision level.
                 currDecisionLevel++;
+                backjumped = false;
             }
         }
 
