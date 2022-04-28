@@ -339,6 +339,12 @@ int main(int argc, char const* argv[]) {
     testCNF("benchmarks/flat50-115/flat50-1.cnf", true);
     testCNF("benchmarks/flat50-115/flat50-2.cnf", true);
     testCNF("benchmarks/flat50-115/flat50-3.cnf", true);
+    testCNF("benchmarks/flat50-115/flat50-4.cnf", true);
+    testCNF("benchmarks/flat50-115/flat50-5.cnf", true);
+    testCNF("benchmarks/flat50-115/flat50-6.cnf", true);
+    testCNF("benchmarks/flat50-115/flat50-7.cnf", true);
+    testCNF("benchmarks/flat50-115/flat50-8.cnf", true);
+
     testCNF("benchmarks/cnf_samples/par8-1-c.cnf", true);
     testCNF("benchmarks/cnf_samples/aim-100-1_6-no-1.cnf", false);
     testCNF("benchmarks/cnf_samples/dubois20.cnf", false);
