@@ -952,6 +952,9 @@ public:
         // while (true) {
         for (int j = 0; j < 8; j++) {
 
+            // TODO: We need to run unit propagation after we've backjumped and start exploring again.
+
+
             // Extend the trail with a new variable assignment, and update the current assignment.
             LOG(DEBUG) << "### choosing new variable assignment";
             LOG(DEBUG) << "current f: " << currCNF.toString();
