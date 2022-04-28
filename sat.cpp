@@ -1134,10 +1134,6 @@ public:
                 return true;
             }
 
-            // Apply unit propagation.
-            LOG(DEBUG) << "running unit propagation for CDCL";
-
-
             // Initialize the antecedent graph with the existing variable assignments.
             auto avars = currTrailAssmt.getVals();
             for (auto it = avars.begin(); it != avars.end(); it++) {
@@ -1147,6 +1143,8 @@ public:
                 // varDecisionLevels[it->first] = currAssmt.getDecisionLevel(it->first);
             }
 
+            // Apply unit propagation.
+            LOG(DEBUG) << "running unit propagation for CDCL";
             fassigned = cdclUnitPropagation(fassigned,
                                             currDecisionLevel,
                                             antecedents,
