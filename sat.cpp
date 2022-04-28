@@ -1096,7 +1096,7 @@ public:
             // pointer back to its "antecedent" clause. That is, the
             // clause that "caused" it be assigned via unit resolution.
             std::map<std::string, int> antecedents;
-            // std::vector<Literal> trail;
+
             // The decision levels of each assigned variable.
             std::map<std::string, int> varDecisionLevels;
 
