@@ -1156,6 +1156,7 @@ public:
             LOG(DEBUG) << "f after unit prop: " << fassigned.toString();
             LOG(DEBUG) << "curr assignment after unit prop: " << currTrailAssmt.toString();
 
+            // Conflict analysis. Learn a clause and determine backjump level.
             int backjumpLevel = -1;
             if (fassigned.hasEmptyClause()) {
 
@@ -1172,9 +1173,7 @@ public:
                 currCNF.appendClause(learnedClause);
             }
 
-            //
-            // Backjump to lower decision level if we ran conflict analysis!
-            //
+            // Backjump to lower decision level if necessary.
             if (backjumpLevel >= 0) {
                 LOG(DEBUG) << "Backjumping to level " << backjumpLevel;
                 LOG(DEBUG) << "current trail stack:";
