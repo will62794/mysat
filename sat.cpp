@@ -1279,7 +1279,7 @@ public:
     }
 
     bool isSat(CNF f) {
-        if(useCDCL){
+        if (useCDCL) {
             return isSatCDCL(f);
         }
 

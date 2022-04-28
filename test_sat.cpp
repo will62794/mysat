@@ -306,8 +306,6 @@ int main(int argc, char const* argv[]) {
     testCNF("benchmarks/random/random1.cnf", true);
     testCNF("benchmarks/random/random2.cnf", true);
     testCNF("benchmarks/random/random3.cnf", true);
-
-    // Still failing currently.
     testCNF("benchmarks/random/random4.cnf", true);
     testCNF("benchmarks/random/random5.cnf", true);
 
@@ -317,9 +315,6 @@ int main(int argc, char const* argv[]) {
     defaultConf.setToDefault();
     defaultConf.set(el::Level::Debug, el::ConfigurationType::Enabled, "false");
     el::Loggers::reconfigureLogger("default", defaultConf);
-
-
-    // testConformance();
 
     testCNF("benchmarks/cnf_samples/aim-50-1_6-yes1-4.cnf", true);
 
@@ -353,6 +348,9 @@ int main(int argc, char const* argv[]) {
     // Pigeonhole benchmark (UNSAT).
     //
     testCNF("benchmarks/pigeon-hole/hole6.cnf", false);
+
+    // Randomized conformance testing.
+    testConformance();
 
     return 0;
 }
