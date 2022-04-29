@@ -13,4 +13,6 @@
 *.DS_Store
 sat
 test_sat
+main
 *.o
+results/mysat_results.csv
