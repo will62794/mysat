@@ -47,7 +47,7 @@ def run_mysat(bms_to_run):
     results = []
     # Run my implementation on benchmarks.
     for bm in bms_to_run:
-        csv_result_file = "results/mysat_result.csv"
+        csv_result_file = "results/result.csv"
         args = " ".join([csv_result_file] + [bm])
         cmd = "./main " + args
         # print(cmd)

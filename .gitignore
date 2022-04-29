@@ -15,4 +15,4 @@ sat
 test_sat
 main
 *.o
-results/mysat_result.csv
+results/result.csv
