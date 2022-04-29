@@ -1,0 +1,16 @@
+bm,duration_ms,is_sat
+benchmarks/cnf_samples/aim-50-1_6-yes1-4.cnf,66,SAT
+benchmarks/cnf_samples/aim-100-1_6-no-1.cnf,1119,SAT
+benchmarks/flat50-115/flat50-1.cnf,178,SAT
+benchmarks/flat50-115/flat50-2.cnf,2632,SAT
+benchmarks/flat50-115/flat50-3.cnf,3829,SAT
+benchmarks/flat50-115/flat50-4.cnf,3293,SAT
+benchmarks/flat50-115/flat50-5.cnf,590,SAT
+benchmarks/flat50-115/flat50-6.cnf,1683,SAT
+benchmarks/flat50-115/flat50-7.cnf,3239,SAT
+benchmarks/flat50-115/flat50-8.cnf,2274,SAT
+benchmarks/flat75-180/flat75-1.cnf,3594,SAT
+benchmarks/flat75-180/flat75-2.cnf,4710,SAT
+benchmarks/flat75-180/flat75-3.cnf,19666,SAT
+benchmarks/flat100-239/flat100-1.cnf,15787,SAT
+benchmarks/pigeon-hole/hole6.cnf,14573,SAT

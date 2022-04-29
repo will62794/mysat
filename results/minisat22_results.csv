@@ -1,0 +1,16 @@
+bm,duration_ms,is_sat
+benchmarks/cnf_samples/aim-50-1_6-yes1-4.cnf,0.03,SAT
+benchmarks/cnf_samples/aim-100-1_6-no-1.cnf,0.05,UNSAT
+benchmarks/flat50-115/flat50-1.cnf,0.01,SAT
+benchmarks/flat50-115/flat50-2.cnf,0.01,SAT
+benchmarks/flat50-115/flat50-3.cnf,0.02,SAT
+benchmarks/flat50-115/flat50-4.cnf,0.01,SAT
+benchmarks/flat50-115/flat50-5.cnf,0.01,SAT
+benchmarks/flat50-115/flat50-6.cnf,0.01,SAT
+benchmarks/flat50-115/flat50-7.cnf,0.01,SAT
+benchmarks/flat50-115/flat50-8.cnf,0.01,SAT
+benchmarks/flat75-180/flat75-1.cnf,0.04,SAT
+benchmarks/flat75-180/flat75-2.cnf,0.02,SAT
+benchmarks/flat75-180/flat75-3.cnf,0.23,SAT
+benchmarks/flat100-239/flat100-1.cnf,0.02,SAT
+benchmarks/pigeon-hole/hole6.cnf,4.64,UNSAT

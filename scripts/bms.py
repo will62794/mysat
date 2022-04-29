@@ -31,6 +31,7 @@ bms = [
 ]
 
 def run_minisat22(bms_to_run):
+    results = []
     for bm in bms_to_run:
         f = CNF(from_file=bm)
         m = Minisat22(bootstrap_with=f.clauses)
@@ -39,11 +40,14 @@ def run_minisat22(bms_to_run):
         dur = time.time() - start
         is_sat = "SAT" if ret else "UNSAT"
         print(f"{bm}: {is_sat}, Solved in {round(dur*1000, 2)}ms")
+        results.append({"bm": bm, "duration_ms": round(dur*1000, 2), "is_sat":is_sat})
+    return results
 
 def run_mysat(bms_to_run):
+    results = []
     # Run my implementation on benchmarks.
     for bm in bms_to_run:
-        csv_result_file = "results/mysat_results.csv"
+        csv_result_file = "results/mysat_result.csv"
         args = " ".join([csv_result_file] + [bm])
         cmd = "./main " + args
         # print(cmd)
@@ -53,11 +57,24 @@ def run_mysat(bms_to_run):
         row = list(reader)[0]
         is_sat = "SAT" if row['is_sat'] else "UNSAT"
         print(f"{bm}: {is_sat}, Solved in {row['duration_ms']}ms")
+        csvfile.close()
+        results.append({"bm": bm, "duration_ms": row['duration_ms'], "is_sat": is_sat})
+    return results
+
+def save_results(results, outfilename):
+    outfile = open(outfilename, 'w')
+    writer = csv.DictWriter(outfile, fieldnames=["bm", "duration_ms", "is_sat"])
+    writer.writeheader()
+    for r in results:
+        writer.writerow(r)
+    outfile.close()   
 
 # Run MiniSAT on benchmarks.
 print("# Running MiniSAT22")
-run_minisat22(bms)
+results = run_minisat22(bms)
+save_results(results, "results/minisat22_results.csv")
 
 # Run mysat on benchmarks.
 print("# Running mysat")
-run_mysat(bms)
+results = run_mysat(bms)
+save_results(results, "results/mysat_results.csv")
