@@ -1,28 +1,33 @@
 \begin{tikzpicture}
-    \node {$a$} [sibling distance = 2.0cm]
+    \node {$a$} [sibling distance = 2.9cm]
     child [] {node {
             \only<1->{$b$}
             % \only<3->{\textcolor{blue}{b}}
-            } [sibling distance =2.35cm]
+            } [sibling distance =3.65cm]
         % c=1
-        child [] {node {\only<1->{$c$}} [sibling distance = 1.85cm]
+        child [] {node {\only<1->{$c$}} [sibling distance = 1.75cm]
             child [] {node {$x$} [sibling distance = 1.15cm]
-                child [] {node  {\only<1-2>{\red{X}}\only<3->{\textbf{\red{X}}}} edge from parent [] node [left]{\only<1-2>{1}\only<3->{\textcolor{blue}{1}}}}
+                child [] {node  {\only<1-2>{\red{X}}\only<3->{\textbf{\red{X}}}} edge from parent [] node [left]{\only<1-2>{1}\only<3->{\textbf{1}}}}
                 child [] {node {\red{X}} edge from parent [] node [right]{0}}
-            edge from parent [] node [left]{\only<1-2>{1}\only<3->{\textcolor{blue}{1}}}} 
+            edge from parent [] node [left]{\only<1-2>{1}\only<3->{\textbf{1}}}} 
             child [] {node {$x$} [sibling distance = 1.15cm]
                 child [] {node  {\red{X}} edge from parent [] node [left]{1}}
                 child [] {node {\red{X}} edge from parent [] node [right]{0}}
             edge from parent [] node [right]{0}}
-        edge from parent [] node [left]{\only<1-2>{1}\only<3->{\textcolor{blue}{1}}}}
+        edge from parent [] node [left]{\only<1-2>{1}\only<3->{\textbf{1}}}}
         % c=0
-        child [] {node {$x \, (c=1)$} [sibling distance =1.35cm]
-            % child [] {node {$x$} 
-            child [] {node {\red{X}} edge from parent [] node [left]{1}}
-            child [] {node {\red{X}} edge from parent [] node [right]{0}}
+        child [] {node {$c$} [sibling distance =1.75cm]
+            child [] {node {x} [sibling distance = 1.15cm]
+                child [] {node {\red{X}} edge from parent [] node [left]{1}}
+                child [] {node {\red{X}} edge from parent [] node [left]{1}}
+            edge from parent [] node [left]{1}}
+            child [] {node {x} [sibling distance = 1.15cm]
+                child [] {node {\red{X}} edge from parent [] node [left]{1}}
+                child [] {node {\red{X}} edge from parent [] node [left]{1}}  
+            edge from parent [] node [right]{0}}
         % edge from parent [] node [left]{0}} 
         edge from parent [] node [right]{0}}
-    edge from parent [] node [left]{\only<1-2>{1}\only<3->{\textcolor{blue}{1}}}}
+    edge from parent [] node [left]{\only<1-2>{1}\only<3->{\textbf{1}}}}
     % a = 0.
     child [] {node {$b=1$\, $\{\}$ \green{sat}} 
     edge from parent [] node [right]{0}};
