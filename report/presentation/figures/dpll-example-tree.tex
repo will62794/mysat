@@ -1,17 +1,17 @@
 \begin{tikzpicture}
     \node {a}
-    child [] {node {
-            \only<1-2>{b}\only<3->{\textcolor{blue}{b}}
-            } 
-        child [] {node {\only<3->{c}}
+    child [] {node {b} 
+        child [] {node {\only<1->{c}}
             child [] {node {d} 
                 child [] {node {x} edge from parent [] node [left]{1}}
-                child [] {node {x} edge from parent [] node [right]{0}}
-            edge from parent [] node [left]{0}} 
-        edge from parent [] node [left]{\only<3->{1}}}
+                child [] {node {x} edge from parent [] node [right]{\only<1-5>{0}\only<6->{\textbf{0}}}}
+            edge from parent [] node [left]{
+                \only<1-4>{0}\only<5->{\textbf{0}}
+            }} 
+        edge from parent [] node [left]{\only<1-3>{1}\only<4->{\textbf{1}}}}
         child [] {node {c} 
         edge from parent [] node [right]{0}}
-    edge from parent [] node [left]{\only<1-2>{1}\only<3->{\textcolor{blue}{1}}}}
+    edge from parent [] node [left]{\only<1-2>{1}\only<3->{\textbf{1}}}}
     child [] {node {b} 
     edge from parent [] node [right]{0}};
 \end{tikzpicture}
