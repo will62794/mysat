@@ -7,14 +7,20 @@
         % c=1
         child [] {node {\only<1->{$c$}} [sibling distance = 1.75cm]
             child [] {node {$x$} [sibling distance = 1.15cm]
-                child [] {node  {\only<1-2>{\red{X}}\only<3->{\textbf{\red{X}}}} edge from parent [] node [left]{\only<1-2>{1}\only<3->{\textbf{1}}}}
+                child [] {node  {\only<1-2>{\red{X}}\only<3->{\textbf{\red{X}}}} edge from parent [] node [left]{
+                    \only<1-2>{1}\only<3-7>{\textbf{1}}\only<8-9>{1}\only<10->{\textbf{1}}
+                }}
                 child [] {node {\red{X}} edge from parent [] node [right]{0}}
-            edge from parent [] node [left]{\only<1-2>{1}\only<3->{\textbf{1}}}} 
+            edge from parent [] node [left]{
+                \only<1-2>{1}\only<3-7>{\textbf{1}}\only<8->{1}
+            }} 
             child [] {node {$x$} [sibling distance = 1.15cm]
                 child [] {node  {\red{X}} edge from parent [] node [left]{1}}
                 child [] {node {\red{X}} edge from parent [] node [right]{0}}
             edge from parent [] node [right]{0}}
-        edge from parent [] node [left]{\only<1-2>{1}\only<3->{\textbf{1}}}}
+        edge from parent [] node [left]{
+            \only<1-2>{1}\only<3-7>{\textbf{1}}\only<8->{1}
+        }}
         % c=0
         child [] {node {$c$} [sibling distance =1.75cm]
             child [] {node {x} [sibling distance = 1.15cm]
@@ -27,7 +33,7 @@
             edge from parent [] node [right]{0}}
         % edge from parent [] node [left]{0}} 
         edge from parent [] node [right]{0}}
-    edge from parent [] node [left]{\only<1-2>{1}\only<3->{\textbf{1}}}}
+    edge from parent [] node [left]{\only<1-2>{1}\only<3-7>{\textbf{1}}\only<8>{1}\only<9->{\textbf{1}}}}
     % a = 0.
     child [] {node {$b=1$\, $\{\}$ \green{sat}} 
     edge from parent [] node [right]{0}};

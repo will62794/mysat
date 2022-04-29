@@ -145,23 +145,125 @@
 
     \begin{columns}
         % CNF formula.
-        \begin{column}{0.2\textwidth}
+        \begin{column}{0.26\textwidth}
+            \small
+            % \vbox to 150pt {\vfil
             \begin{align*}
-                &\{a,b\}\\
-                &\{b,c\}\\
-                &\{\neg a, \neg x, y\} \\
-                &\{\neg a, x, z\} \\
-                &\{ \neg a, \neg y, z\} \\
-                &\{ \neg a, x, \neg z\} \\
-                &\{ \neg a, \neg y, \neg z\}
+                \only<1-2>{
+                    &c_1 \quad \{a,b\}\\
+                    &c_2 \quad \{b,c\}\\
+                    &c_3 \quad \{\neg a, \neg x, y\} \\
+                    &c_4 \quad \{\neg a, x, z\} \\
+                    &c_5 \quad \{\neg a, \neg y, z\} \\
+                    &c_6 \quad \{\neg a, x, \neg z\} \\
+                    &c_7 \quad \{\neg a, \neg y, \neg z\}
+                }
+                \only<3>{
+                &c_1 \quad \{\green{a},b\}\\
+                &c_2 \quad \{\green{b},\green{c}\}\\
+                &c_3 \quad \{\red{\neg a}, \red{\neg x}, y\} \\
+                &c_4 \quad \{\red{\neg a}, \green{x}, z\} \\
+                &c_5 \quad \{\red{\neg a}, \neg y, z\} \\
+                &c_6 \quad \{\red{\neg a}, \green{x}, \neg z\} \\
+                &c_7 \quad \{\red{\neg a}, \neg y, \neg z\}
+                }
+                \only<4>{
+                    &c_1 \quad \{\green{a},b\}\\
+                    &c_2 \quad \{\green{b},\green{c}\}\\
+                    &c_3 \quad \{\red{\neg a}, \red{\neg x}, \green{y}\} \\
+                    &c_4 \quad \{\red{\neg a}, \green{x}, z\} \\
+                    &c_5 \quad \{\red{\neg a}, \red{\neg y}, z\} \\
+                    &c_6 \quad \{\red{\neg a}, \green{x}, \neg z\} \\
+                    &c_7 \quad \{\red{\neg a}, \red{\neg y}, \neg z\}
+                }
+                \only<5-7>{
+                    &c_1 \quad \{\green{a},b\}\\
+                    &c_2 \quad \{\green{b},\green{c}\}\\
+                    &c_3 \quad \{\red{\neg a}, \red{\neg x}, \green{y}\} \\
+                    &c_4 \quad \{\red{\neg a}, \green{x}, z\} \\
+                    &c_5 \quad \{\red{\neg a}, \red{\neg y}, \green{z}\} \\
+                    &c_6 \quad \{\red{\neg a}, \green{x}, \red{\neg z}\} \\
+                    &\red{c_7} \quad \{\red{\neg a}, \red{\neg y}, \red{\neg z}\}
+                }
+                \only<8>{
+                    &l_1 \quad \{\neg a, \neg x\}\\
+                    \hline
+                    &c_1 \quad \{a,b\}\\
+                    &c_2 \quad \{b,c\}\\
+                    &c_3 \quad \{\neg a, \neg x, y\} \\
+                    &c_4 \quad \{\neg a, x, z\} \\
+                    &c_5 \quad \{\neg a, \neg y, z\} \\
+                    &c_6 \quad \{\neg a, x, \neg z\} \\
+                    &c_7 \quad \{\neg a, \neg y, \neg z\}
+                }
+                \only<9>{
+                    &l_1 \quad \{\red{\neg a}, \neg x\}\\
+                    \hline
+                    &c_1 \quad \{\green{a},b\}\\
+                    &c_2 \quad \{b,c\}\\
+                    &c_3 \quad \{\red{\neg a}, \neg x, y\} \\
+                    &c_4 \quad \{\red{\neg a}, x, z\} \\
+                    &c_5 \quad \{\red{\neg a}, \neg y, z\} \\
+                    &c_6 \quad \{\red{\neg a}, x, \neg z\} \\
+                    &c_7 \quad \{\red{\neg a}, \neg y, \neg z\}
+                }
+                \only<10>{
+                    &l_1 \quad \{\red{\neg a}, \green{\neg x}\}\\
+                    \hline
+                    &c_1 \quad \{\green{a},b\}\\
+                    &c_2 \quad \{b,c\}\\
+                    &c_3 \quad \{\red{\neg a}, \green{\neg x}, y\} \\
+                    &c_4 \quad \{\red{\neg a}, \red{x}, z\} \\
+                    &c_5 \quad \{\red{\neg a}, \neg y, z\} \\
+                    &c_6 \quad \{\red{\neg a}, \red{x}, \neg z\} \\
+                    &c_7 \quad \{\red{\neg a}, \neg y, \neg z\}
+                }
+                \only<11-12>{
+                    &l_1 \quad \{\red{\neg a}, \green{\neg x}\}\\
+                    \hline
+                    &c_1 \quad \{\green{a},b\}\\
+                    &c_2 \quad \{b,c\}\\
+                    &c_3 \quad \{\red{\neg a}, \green{\neg x}, y\} \\
+                    &c_4 \quad \{\red{\neg a}, \red{x}, \green{z}\} \\
+                    &c_5 \quad \{\red{\neg a}, \neg y, \green{z}\} \\
+                    &\red{c_6} \quad \{\red{\neg a}, \red{x}, \red{\neg z}\} \\
+                    &c_7 \quad \{\red{\neg a}, \neg y, \red{\neg z}\}
+                }
+                \only<13->{
+                    &l_2 \quad \{\neg a\}\\
+                    &l_1 \quad \{\neg a, \neg x\}\\
+                    \hline
+                    &c_1 \quad \{a,b\}\\
+                    &c_2 \quad \{b,c\}\\
+                    &c_3 \quad \{\neg a, \neg x, y\} \\
+                    &c_4 \quad \{\neg a, x, z\} \\
+                    &c_5 \quad \{\neg a, \neg y, z\} \\
+                    &c_6 \quad \{\neg a, x, \neg z\} \\
+                    &c_7 \quad \{\neg a, \neg y, \neg z\}
+                }
             \end{align*}
+            % \vfil
+            % }
+            \vbox to 40pt {\vfil
+                \only<1-3>{\phantom{unit propagate $y$}}
+                \only<4>{unit propagate $y$}
+                \only<5>{unit propagate $z$}
+                \only<6>{\small Note that $b$ and $c$ are irrelevant to the $c_7$ conflict. $(a \wedge x)$ or $(a \wedge y)$ are sufficient.}
+                \only<7>{\small So, we can learn $\neg (a \wedge x) = (\neg a \vee \neg x)$ as a new constraint i.e. a \textit{learned clause}.}
+                \only<10-11>{\small With the learned clause, we come to the conflict quickly.}
+                \only<12>{\small This time, $a$ is sufficient to cause the conflict, so we learn $\neg a$.}
+                \only<13->{\small With $l_2=\neg a$, we now get out of the unfruitful search space region.}
+                % \only<7->{\small So, view $\neg (a \wedge x) = (\neg a \vee \neg x)$ as a \textit{learned} constraint.}
+                % \hbox to 3cm{Some info}%
+                \vfil
+            }
         \end{column}
 
         % DPLL/CDCL search tree.
-        \begin{column}{0.73\textwidth}
+        \begin{column}{0.70\textwidth}
             \begin{figure}
                 \input{figures/dpll-conflicts-example-tree.tex}
-                \caption{Termination tree using standard DPLL.}
+                \caption{Termination tree from basic DPLL.}
             \end{figure}
             % \begin{center}
             % \end{center}
