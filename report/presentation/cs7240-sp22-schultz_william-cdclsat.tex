@@ -272,63 +272,91 @@
     \end{columns}
 \end{frame}
 
-\begin{frame}{CDCL Example}
-\begin{itemize}
-    \item From basic DPLL traversal we can see that there is no satisfying assignment where $a=1$
-    \item But, we could have learned earlier on that this was an unfruitful section of the search space
-    \item Idea is to analyze the conflict the occurred from partial assignment $\{a=1,b=1,c=1,x=1\}$
-\end{itemize}
-\end{frame}
+% \begin{frame}{CDCL Example}
+% \begin{itemize}
+%     \item From basic DPLL traversal we can see that there is no satisfying assignment where $a=1$
+%     \item But, we could have learned earlier on that this was an unfruitful section of the search space
+%     \item Idea is to analyze the conflict the occurred from partial assignment $\{a=1,b=1,c=1,x=1\}$
+% \end{itemize}
+% \end{frame}
 
 \begin{frame}{CDCL: Implication Graph}
     \begin{itemize}
-        \item Can represent the propagation of variable assignments in an \textit{implication graph}
-        \item Nodes of this graph represent variable assignments made in the current search path
-        \item Edges correspond to dependencies between these assignments.
+        \item In general, can represent the propagation of variable assignments in an \textit{implication graph}
+        \pause
+        \begin{itemize}
+            \item Nodes of this graph represent variable assignments in the current search path. Edges to dependencies between these assignments.
+            \item Cuts in the graph correspond to a conflict set and, by negating it, a potential clause to learn
+        \end{itemize}
+        \begin{center}
+            \includegraphics[scale=0.3]{figures/implication-graph.png}
+        \end{center}
 \end{itemize}
 \end{frame}
 
+% \begin{frame}{CDCL: Implication Graph}
+%     \begin{itemize}
+%         \item When a conflict is encountered, analyze the implication graph
+%         \item A cut corresponds to a conflict set and its negation a clause to learn
+%     \end{itemize}
+% \end{frame}
+
+\begin{frame}{SAT Solver Implementation}
+    \begin{itemize}[<+->]
+        \item Implementing my own CDCL SAT solver as a framework for exploring future potential SAT enhancements
+        \item Around 1500 lines of C++, tested on a variety of easy to medium SAT benchmark problems
+        \begin{itemize}
+            \item \url{https://github.com/will62794/mysat} 
+        \end{itemize}
+        \item Still order of magnitude slower than modern solvers (e.g. MiniSAT)
+    \end{itemize}
+\end{frame}
 
 \begin{frame}{SAT Solver Implementation}
     \begin{itemize}
-        \item Iimplementing my own CDCL SAT solver as a framework for exploring future potential SAT enhancements
-        \item Around 1500 lines of C++, tested on a variety of easy to medium SAT benchmark problems
-        \item \url{https://github.com/will62794/mysat}
+        \item Still order of magnitude slower than modern solvers (e.g. MiniSAT \cite{04minisat}), but is improvement on basic DPLL
+        \pause
+        \item e.g. runtime on some benchmarks with $\approx$ 50-200 variables, time budget of 25 seconds (red bar indicates timeout)
     \end{itemize}
+    \begin{center}
+        \includegraphics[scale=0.45]{../../results/compare.pdf}
+    \end{center}
 \end{frame}
 
-\begin{frame}{Evaluation}
-    \begin{itemize}
-        \item Some peformance results of my SAT solver against a performant, modern solver.
-    \end{itemize}
-\end{frame}
+
+% \begin{frame}{Evaluation}
+%     \begin{itemize}
+%         \item Some peformance results of my SAT solver against a performant, modern solver.
+%     \end{itemize}
+% \end{frame}
 
 \begin{frame}{Future Extensions and Learning Heuristics}
     \begin{itemize}
         \item Modern CDCL based SAT solvers employ many heuristics
             \begin{itemize}
                 \item Variable ordering
-                \item Clause deletion policies
+                \item Learned clause deletion policies
             \end{itemize}
         \item Often these are ``expertly tuned'' heuristics
-        \item \textit{CrystalBall} \cite{2019sooscrystalball}: Possible to learn better heuristics from data on SAT solver executions? 
+
     \end{itemize}
 \end{frame}
 
-\begin{frame}
+\begin{frame}{CrystalBall}
     \begin{itemize}
-        \item CrystalBall
+        \item \textit{CrystalBall} \cite{2019sooscrystalball}: Possible to learn better heuristics from data on SAT solver executions? 
+        \item Learned clause deletion is an important heuristic for CDCL based SAT solvers
+        \item Use data from SAT runs to train a model
+        \item DRAT resolution proofs serve as a good source of data
     \end{itemize}
 \end{frame}
 
-% \begin{frame}{Future Extensions and Learning Heuristics}
-%     \begin{itemize}
-%         \item Resolution proofs
-%         \item Variable ordering heuristics
-%         \item Learning heuristics
-%         \item Learning end to end SAT solver (neuroSAT)
-%     \end{itemize}
-% \end{frame}
+\begin{frame}{Future Goals}
+    \begin{itemize}
+        \item Implement support for resolution proof output in UNSAT cases
+        \item Capture more statistics from solving runs as a basis for learning new heuristics
+    \end{itemize}
+\end{frame}
 
 \begin{frame}{}
     \begin{center}

@@ -13,7 +13,12 @@ bms = [
     # "benchmarks/CBS_k3_n100_m403_b10/CBS_k3_n100_m403_b10_0.cnf",
     # "benchmarks/CBS_k3_n100_m403_b10/CBS_k3_n100_m403_b10_1.cnf",
     # "benchmarks/CBS_k3_n100_m403_b10/CBS_k3_n100_m403_b10_2.cnf",
+   
     # Graph coloring.
+    "benchmarks/flat30-60/flat30-1.cnf",
+    "benchmarks/flat30-60/flat30-2.cnf",
+    "benchmarks/flat30-60/flat30-3.cnf",
+    "benchmarks/flat30-60/flat30-4.cnf",
     "benchmarks/flat50-115/flat50-1.cnf",
     "benchmarks/flat50-115/flat50-2.cnf",
     "benchmarks/flat50-115/flat50-3.cnf",
@@ -22,12 +27,11 @@ bms = [
     "benchmarks/flat50-115/flat50-6.cnf",
     "benchmarks/flat50-115/flat50-7.cnf",
     "benchmarks/flat50-115/flat50-8.cnf",
-    "benchmarks/flat75-180/flat75-1.cnf",
-    "benchmarks/flat75-180/flat75-2.cnf",
-    "benchmarks/flat75-180/flat75-3.cnf",
-    "benchmarks/flat100-239/flat100-1.cnf",
+
+    # "benchmarks/flat75-180/flat75-1.cnf",
+    # "benchmarks/flat75-180/flat75-2.cnf",
     # Pigeonhole.
-    # "benchmarks/pigeon-hole/hole6.cnf",
+    "benchmarks/pigeon-hole/hole6.cnf",
     # "benchmarks/pigeon-hole/hole7.cnf",
     # "benchmarks/pigeon-hole/hole8.cnf"
 ]
@@ -45,27 +49,33 @@ def run_minisat22(bms_to_run):
         results.append({"bm": bm, "duration_ms": round(dur*1000, 2), "is_sat":is_sat})
     return results
 
-def run_mysat(bms_to_run):
+def run_mysat(bms_to_run, cdcl):
     results = []
     # Run my implementation on benchmarks.
     for bm in bms_to_run:
         csv_result_file = "results/result.csv"
-        args = " ".join([csv_result_file] + [bm])
+        args = " ".join([csv_result_file, cdcl] + [bm])
         cmd = "./main " + args
         # print(cmd)
-        res = subprocess.run(cmd, shell=True, capture_output=True)
+        maxtime_secs = 25
+        try:
+            res = subprocess.run(cmd, shell=True, capture_output=True, timeout=maxtime_secs)
+        except subprocess.TimeoutExpired as e:
+            print(e)
+            results.append({"bm": bm, "duration_ms": maxtime_secs * 1000, "is_sat": False, "timeout": True})
+            continue
         csvfile = open(csv_result_file)
         reader = csv.DictReader(csvfile, delimiter=',')
         row = list(reader)[0]
         is_sat = "SAT" if row['is_sat'] else "UNSAT"
         print(f"{bm}: {is_sat}, Solved in {row['duration_ms']}ms")
         csvfile.close()
-        results.append({"bm": bm, "duration_ms": float(row['duration_ms']), "is_sat": is_sat})
+        results.append({"bm": bm, "duration_ms": float(row['duration_ms']), "is_sat": is_sat, "timeout": False})
     return results
 
 def save_results(results, outfilename):
     outfile = open(outfilename, 'w')
-    writer = csv.DictWriter(outfile, fieldnames=["bm", "duration_ms", "is_sat"])
+    writer = csv.DictWriter(outfile, fieldnames=["bm", "duration_ms", "is_sat", "timeout"])
     writer.writeheader()
     for r in results:
         writer.writerow(r)
@@ -77,19 +87,50 @@ minisat_results = run_minisat22(bms)
 save_results(minisat_results, "results/minisat22_results.csv")
 
 # Run mysat on benchmarks.
-print("# Running mysat")
-mysat_results = run_mysat(bms)
-save_results(mysat_results, "results/mysat_results.csv")
+print("# Running mysat without CDCL")
+mysat_dpll_results = run_mysat(bms, "false")
+save_results(mysat_dpll_results, "results/mysat_results_dpll.csv")
 
+# Run mysat on benchmarks.
+print("# Running mysat with CDCL")
+mysat_cdcl_results = run_mysat(bms, "true")
+save_results(mysat_cdcl_results, "results/mysat_results_cdcl.csv")
 
 
 fig = plt.figure()
-ax = fig.add_axes([0,0,1,1])
-mysat_durations = [r["duration_ms"] for r in mysat_results]
-minisat_durations = [r["duration_ms"] for r in minisat_results]
-results = [mysat_durations, minisat_durations]
+fig, ax = plt.subplots()
+# fig.set_figwidth(20)
+
+
+# ax = fig.add_axes([0,0,1,1])
+mysat_dpll_durations = np.array([r["duration_ms"] for r in mysat_dpll_results])
+mysat_cdcl_durations = np.array([r["duration_ms"] for r in mysat_cdcl_results])
+minisat_durations = np.array([r["duration_ms"] for r in minisat_results])
+results = [
+    mysat_dpll_durations, 
+    mysat_cdcl_durations, 
+    minisat_durations
+]
 print(results)
-ax.plot(bms,results[0],color="blue")
-ax.plot(bms,results[1],color="orange")
+width = 0.2
+x = np.arange(len(bms))  # the label locations
+
+cs = ["black" if not r["timeout"] else "red" for r in mysat_dpll_results]
+
+# TODO: Consider distinguishing bars by texture so that color can be used to indicate timeouts as well.
+r1 = ax.barh(x,results[0],0.2, width, color=cs, label="mysat_dpll")
+r1 = ax.barh(x + 0.2,results[1],0.2, width, color="blue", label="mysat_cdcl")
+r2 = ax.barh(x + 0.4,results[2], width, color="orange", label="minisat2.2")
+# plt.plot(bms,results[0],color="blue")
+# plt.plot(bms,results[1],color="orange")
+# plt.set_xticks(bms)
 # plt.show()
-plt.savefig("results/compare")
+ax.set_yticks(x, [bm[bm.index("/")+1:] for bm in bms])
+ax.invert_yaxis()
+ax.set_xlabel("time to solve (ms)")
+# ax.set_xscale('log')
+ax.legend()
+# ax.bar_label(r1)
+# ax.bar_label(r2, padding=3)
+plt.tight_layout()
+plt.savefig("results/compare.pdf")

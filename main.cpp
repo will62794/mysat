@@ -12,13 +12,13 @@ struct Result {
     bool isSat;
 };
 
-Result runCNF(std::string cnfFile) {
+Result runCNF(std::string cnfFile, bool useCDCL) {
     std::ifstream t(cnfFile);
     std::stringstream buffer;
     buffer << t.rdbuf();
     CNF f = CNF::fromDIMACS(buffer.str());
 
-    Solver solver = Solver();
+    Solver solver = Solver(useCDCL);
     auto start = high_resolution_clock::now();
     auto ret = solver.isSat(f);
     auto stop = high_resolution_clock::now();
@@ -48,19 +48,20 @@ int main(int argc, char const* argv[]) {
     defaultConf.set(el::Level::Debug, el::ConfigurationType::Enabled, "false");
     el::Loggers::reconfigureLogger("default", defaultConf);
 
-    if (argc < 3) {
+    if (argc < 4) {
         std::cout << "Must supply CSV out file and CNF files as arguments.";
         return 0;
     }
 
     std::string outcsvFile(argv[1]);
+    bool cdcl = (std::string(argv[2]) == "true");
 
     std::stringstream outCSV;
     outCSV << "duration_ms,is_sat\n";
-    for (int i = 2; i < argc; i++) {
+    for (int i = 3; i < argc; i++) {
         std::string argCNF(argv[i]);
         std::cout << "Running : " << argCNF << std::endl;
-        Result res = runCNF(argCNF);
+        Result res = runCNF(argCNF, cdcl);
         outCSV << res.durationMS << "," << res.isSat << "\n";
     }
 

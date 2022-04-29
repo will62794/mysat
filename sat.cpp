@@ -840,6 +840,10 @@ private:
 public:
     Solver() {}
 
+    Solver(bool cdcl) {
+        useCDCL = cdcl;
+    }
+
     Assignment getAssignment() {
         return _currAssignment;
     }
