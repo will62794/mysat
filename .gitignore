@@ -16,3 +16,4 @@ test_sat
 main
 *.o
 results/result.csv
+results/test.csv
