@@ -5,6 +5,7 @@ import subprocess
 import csv
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
 
 bms = [
     "benchmarks/cnf_samples/aim-50-1_6-yes1-4.cnf",
@@ -81,31 +82,42 @@ def save_results(results, outfilename):
         writer.writerow(r)
     outfile.close()   
 
-# Run MiniSAT on benchmarks.
-print("# Running MiniSAT22")
-minisat_results = run_minisat22(bms)
-save_results(minisat_results, "results/minisat22_results.csv")
+if len(sys.argv) == 0:
+    # Run MiniSAT on benchmarks.
+    print("# Running MiniSAT22")
+    minisat_results = run_minisat22(bms)
+    save_results(minisat_results, "results/minisat22_results.csv")
 
-# Run mysat on benchmarks.
-print("# Running mysat without CDCL")
-mysat_dpll_results = run_mysat(bms, "false")
-save_results(mysat_dpll_results, "results/mysat_results_dpll.csv")
+    # Run mysat on benchmarks.
+    print("# Running mysat without CDCL")
+    mysat_dpll_results = run_mysat(bms, "false")
+    save_results(mysat_dpll_results, "results/mysat_results_dpll.csv")
 
-# Run mysat on benchmarks.
-print("# Running mysat with CDCL")
-mysat_cdcl_results = run_mysat(bms, "true")
-save_results(mysat_cdcl_results, "results/mysat_results_cdcl.csv")
+    # Run mysat on benchmarks.
+    print("# Running mysat with CDCL")
+    mysat_cdcl_results = run_mysat(bms, "true")
+    save_results(mysat_cdcl_results, "results/mysat_results_cdcl.csv")
 
 
 fig = plt.figure()
 fig, ax = plt.subplots()
 # fig.set_figwidth(20)
 
+reader = csv.DictReader(open("results/minisat22_results.csv"))
+minisat_results = list(reader)
+
+reader = csv.DictReader(open("results/mysat_results_dpll.csv"))
+mysat_dpll_results = list(reader)
+
+reader = csv.DictReader(open("results/mysat_results_cdcl.csv"))
+mysat_cdcl_results = list(reader)
+
+print(mysat_cdcl_results)
 
 # ax = fig.add_axes([0,0,1,1])
-mysat_dpll_durations = np.array([r["duration_ms"] for r in mysat_dpll_results])
-mysat_cdcl_durations = np.array([r["duration_ms"] for r in mysat_cdcl_results])
-minisat_durations = np.array([r["duration_ms"] for r in minisat_results])
+mysat_dpll_durations = np.array([float(r["duration_ms"]) for r in mysat_dpll_results])
+mysat_cdcl_durations = np.array([float(r["duration_ms"]) for r in mysat_cdcl_results])
+minisat_durations = np.array([float(r["duration_ms"]) for r in minisat_results])
 results = [
     mysat_dpll_durations, 
     mysat_cdcl_durations, 
@@ -115,7 +127,7 @@ print(results)
 width = 0.2
 x = np.arange(len(bms))  # the label locations
 
-cs = ["black" if not r["timeout"] else "red" for r in mysat_dpll_results]
+cs = ["red" if r["timeout"]=="True" else "black" for r in mysat_dpll_results]
 
 # TODO: Consider distinguishing bars by texture so that color can be used to indicate timeouts as well.
 r1 = ax.barh(x,results[0],0.2, width, color=cs, label="mysat_dpll")
