@@ -1,7 +1,7 @@
 # default:
 # 	g++ -std=c++11 sat.cpp -o sat
 test:
-	g++ -O1 -std=c++11 test_sat.cpp easylogging++.cc -o test_sat
+	g++ -O3 -std=c++11 test_sat.cpp easylogging++.cc -o test_sat
 runner:
 	g++ -O3 -std=c++11 main.cpp easylogging++.cc -o main
 all: test runner
