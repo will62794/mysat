@@ -8,7 +8,7 @@
         child [] {node {\only<1->{$c$}} [sibling distance = 1.75cm]
             child [] {node {$x$} [sibling distance = 1.15cm]
                 child [] {node  {\only<1-2>{\red{X}}\only<3->{\textbf{\red{X}}}} edge from parent [] node [left]{
-                    \only<1-2>{1}\only<3-7>{\textbf{1}}\only<8-9>{1}\only<10->{\textbf{1}}
+                    \only<1-2>{1}\only<3-7>{\textbf{1}}\only<8-9>{1}\only<10-12>{\textbf{1}}\only<13->{1}
                 }}
                 child [] {node {\red{X}} edge from parent [] node [right]{0}}
             edge from parent [] node [left]{
@@ -33,8 +33,8 @@
             edge from parent [] node [right]{0}}
         % edge from parent [] node [left]{0}} 
         edge from parent [] node [right]{0}}
-    edge from parent [] node [left]{\only<1-2>{1}\only<3-7>{\textbf{1}}\only<8>{1}\only<9->{\textbf{1}}}}
+    edge from parent [] node [left]{\only<1-2>{1}\only<3-7>{\textbf{1}}\only<8>{1}\only<9-13>{\textbf{1}}\only<14->{1}}}
     % a = 0.
     child [] {node {$b=1$\, $\{\}$ \green{sat}} 
-    edge from parent [] node [right]{0}};
+    edge from parent [] node [right]{\only<1-13>{0}\only<14->{\textbf{0}}}};
 \end{tikzpicture}

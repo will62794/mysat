@@ -45,21 +45,28 @@
     \vspace{12pt}
     e.g.
     \begin{align*}
+        \only<2>{
         (x_1 \vee x_2) \wedge (\neg x_3 \vee \neg x_1)
+        }
+        \only<3->{
+            (\green{x_1} \vee \red{x_2}) \wedge (\green{\neg x_3} \vee \red{\neg x_1})
+        }
     \end{align*}
-    \pause
+    \onslide<3->{
     \begin{center}
         SAT, with $\{x_1=1,x_2=0,x_3=0\}$. 
     \end{center}
-    \pause
+    }
+    \onslide<4->{
     CNF notation:
     \begin{align*}
         \{\{x_1, x_2\}, \{\neg x_3, \neg x_1\}\}
     \end{align*}
+    }
 \end{frame}
 
 \begin{frame}{DPLL: SAT as Search}
-    \begin{itemize}
+    \begin{itemize}[<+->]
         \item A basic approach to solving SAT is to view it as a search problem over possible assignments.
         \item This is the basis of the Davis–Putnam–Logemann–Loveland (DPLL) algorithm \cite{dpll1961}
         \item Basic idea of DPLL is to do a depth first, brute force search with backtracking along with some basic formula simplification as you go.
@@ -229,7 +236,7 @@
                     &\red{c_6} \quad \{\red{\neg a}, \red{x}, \red{\neg z}\} \\
                     &c_7 \quad \{\red{\neg a}, \neg y, \red{\neg z}\}
                 }
-                \only<13->{
+                \only<13>{
                     &l_2 \quad \{\neg a\}\\
                     &l_1 \quad \{\neg a, \neg x\}\\
                     \hline
@@ -240,6 +247,30 @@
                     &c_5 \quad \{\neg a, \neg y, z\} \\
                     &c_6 \quad \{\neg a, x, \neg z\} \\
                     &c_7 \quad \{\neg a, \neg y, \neg z\}
+                }
+                \only<14>{
+                    &l_2 \quad \{\green{\neg a}\}\\
+                    &l_1 \quad \{\green{\neg a}, \neg x\}\\
+                    \hline
+                    &c_1 \quad \{\red{a},b\}\\
+                    &c_2 \quad \{b,c\}\\
+                    &c_3 \quad \{\green{\neg a}, \neg x, y\} \\
+                    &c_4 \quad \{\green{\neg a}, x, z\} \\
+                    &c_5 \quad \{\green{\neg a}, \neg y, z\} \\
+                    &c_6 \quad \{\green{\neg a}, x, \neg z\} \\
+                    &c_7 \quad \{\green{\neg a}, \neg y, \neg z\}
+                }
+                \only<15->{
+                    &l_2 \quad \{\green{\neg a}\}\\
+                    &l_1 \quad \{\green{\neg a}, \neg x\}\\
+                    \hline
+                    &c_1 \quad \{\red{a},\green{b}\}\\
+                    &c_2 \quad \{\green{b},c\}\\
+                    &c_3 \quad \{\green{\neg a}, \neg x, y\} \\
+                    &c_4 \quad \{\green{\neg a}, x, z\} \\
+                    &c_5 \quad \{\green{\neg a}, \neg y, z\} \\
+                    &c_6 \quad \{\green{\neg a}, x, \neg z\} \\
+                    &c_7 \quad \{\green{\neg a}, \neg y, \neg z\}
                 }
             \end{align*}
             % \vfil
@@ -343,7 +374,7 @@
 \end{frame}
 
 \begin{frame}{CrystalBall}
-    \begin{itemize}
+    \begin{itemize}[<+->]
         \item \textit{CrystalBall} \cite{2019sooscrystalball}: Possible to learn better heuristics from data on SAT solver executions? 
         \item Learned clause deletion is an important heuristic for CDCL based SAT solvers
         \item Use data from SAT runs to train a model
