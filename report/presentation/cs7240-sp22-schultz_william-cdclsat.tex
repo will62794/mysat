@@ -361,31 +361,44 @@
 %     \end{itemize}
 % \end{frame}
 
-\begin{frame}{Future Extensions and Learning Heuristics}
+\begin{frame}{Future Extensions: Learning Heuristics}
     \begin{itemize}
-        \item Modern CDCL based SAT solvers employ many heuristics
-            \begin{itemize}
+        \item Modern CDCL based SAT solvers employ many heuristics e.g. for determining:
+            \begin{enumerate}
                 \item Variable ordering
                 \item Learned clause deletion policies
-            \end{itemize}
-        \item Often these are ``expertly tuned'' heuristics
-
+                \item Random restarts
+            \end{enumerate}
+        \item Often these are ``expertly tuned'', based on experience/intuition
     \end{itemize}
 \end{frame}
 
 \begin{frame}{CrystalBall}
     \begin{itemize}[<+->]
-        \item \textit{CrystalBall} \cite{2019sooscrystalball}: Possible to learn better heuristics from data on SAT solver executions? 
+        \item \textit{CrystalBall} \cite{2019sooscrystalball}: Possible to learn better heuristics from ``whitebox" data on SAT solver executions? 
         \item Learned clause deletion is an important heuristic for CDCL based SAT solvers
         \item Use data from SAT runs to train a model
         \item DRAT resolution proofs serve as a good source of data
+        \pause
+        \begin{itemize}
+            \item Proofs based on resolution inference rule i.e. if
+            \begin{align*}
+                &C_1 = (x \vee a_1 \vee \dots \vee a_n) \\
+                &C_2 = (\neg{x} \vee b_1 \vee \dots \vee b_m)
+            \end{align*}
+            the clause 
+            \begin{align*}
+                C = C_1 \bowtie C_2 = (a_1 \vee \dots \vee a_n \vee b_1 \vee \dots \vee b_m)
+            \end{align*}
+            can be inferred.
+        \end{itemize}
     \end{itemize}
 \end{frame}
 
 \begin{frame}{Future Goals}
-    \begin{itemize}
+    \begin{itemize}[<+->]
         \item Implement support for resolution proof output in UNSAT cases
-        \item Capture more statistics from solving runs as a basis for learning new heuristics
+        \item Capture more statistics from solving runs as a basis for learning new heuristics e.g. clause activity
     \end{itemize}
 \end{frame}
 
