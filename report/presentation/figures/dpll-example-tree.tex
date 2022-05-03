@@ -3,8 +3,8 @@
     child [] {node {b} 
         child [] {node {\only<1->{c}}
             child [] {node {d} 
-                child [] {node {x} edge from parent [] node [left]{1}}
-                child [] {node {x} edge from parent [] node [right]{\only<1-5>{0}\only<6->{\textbf{0}}}}
+                child [] {node {\red{X}} edge from parent [] node [left]{1}}
+                child [] {node {\green{SAT}} edge from parent [] node [right]{\only<1-5>{0}\only<6->{\textbf{0}}}}
             edge from parent [] node [left]{
                 \only<1-4>{0}\only<5->{\textbf{0}}
             }} 

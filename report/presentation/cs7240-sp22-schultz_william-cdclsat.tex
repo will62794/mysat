@@ -152,7 +152,7 @@
 
     \begin{columns}
         % CNF formula.
-        \begin{column}{0.26\textwidth}
+        \begin{column}{0.28\textwidth}
             \small
             % \vbox to 150pt {\vfil
             \begin{align*}
@@ -166,7 +166,7 @@
                     &c_7 \quad \{\neg a, \neg y, \neg z\}
                 }
                 \only<3>{
-                &c_1 \quad \{\green{a},b\}\\
+                &c_1 \quad \{\green{a},\green{b}\}\\
                 &c_2 \quad \{\green{b},\green{c}\}\\
                 &c_3 \quad \{\red{\neg a}, \red{\neg x}, y\} \\
                 &c_4 \quad \{\red{\neg a}, \green{x}, z\} \\
@@ -175,7 +175,7 @@
                 &c_7 \quad \{\red{\neg a}, \neg y, \neg z\}
                 }
                 \only<4>{
-                    &c_1 \quad \{\green{a},b\}\\
+                    &c_1 \quad \{\green{a},\green{b}\}\\
                     &c_2 \quad \{\green{b},\green{c}\}\\
                     &c_3 \quad \{\red{\neg a}, \red{\neg x}, \green{y}\} \\
                     &c_4 \quad \{\red{\neg a}, \green{x}, z\} \\
@@ -184,10 +184,10 @@
                     &c_7 \quad \{\red{\neg a}, \red{\neg y}, \neg z\}
                 }
                 \only<5-7>{
-                    &c_1 \quad \{\green{a},b\}\\
+                    &c_1 \quad \{\green{a},\green{b}\}\\
                     &c_2 \quad \{\green{b},\green{c}\}\\
                     &c_3 \quad \{\red{\neg a}, \red{\neg x}, \green{y}\} \\
-                    &c_4 \quad \{\red{\neg a}, \green{x}, z\} \\
+                    &c_4 \quad \{\red{\neg a}, \green{x}, \green{z}\} \\
                     &c_5 \quad \{\red{\neg a}, \red{\neg y}, \green{z}\} \\
                     &c_6 \quad \{\red{\neg a}, \green{x}, \red{\neg z}\} \\
                     &\red{c_7} \quad \{\red{\neg a}, \red{\neg y}, \red{\neg z}\}
@@ -278,9 +278,9 @@
             \vbox to 40pt {\vfil
                 % \only<0>{DPLL search explores large region of the left search tree.}
                 \only<1-3>{\phantom{unit propagate $y$}}
-                \only<4>{unit propagate $y$}
-                \only<5>{unit propagate $z$}
-                \only<6>{\small Note that $b$ and $c$ are irrelevant to the $c_7$ conflict. $(a \wedge x)$ or $(a \wedge y)$ are sufficient.}
+                \only<4>{unit propagate $y$ ($c_3$)}
+                \only<5>{unit propagate $z$ ($c_5$) \\ \red{Conflict!}}
+                \only<6>{\small Note that $b$ and $c$ are irrelevant to the $c_7$ conflict. $(a \wedge y)$ (or $(a \wedge x)$) is sufficient.}
                 \only<7>{\small So, we can learn $\neg (a \wedge x) = (\neg a \vee \neg x)$ as a new constraint i.e. a \textit{learned clause}.}
                 \only<10-11>{\small With the learned clause, we come to the conflict quickly.}
                 \only<12>{\small This time, $a$ is sufficient to cause the conflict, so we learn $\neg a$.}
