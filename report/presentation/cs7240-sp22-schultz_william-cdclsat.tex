@@ -80,7 +80,10 @@
     \begin{itemize}[<+->]
         \item Core simplification rule employed in DPLL, and also in CDCL as we will see later.
         \item A \textit{unit clause} is a clause that contains exactly one literal.
-        \item If a CNF formula contains a unit clause then we can apply unit propagation i.e. set that literal to the appropriate truth value to satisfy its clause e.g.
+        \item If a CNF formula contains a unit clause then we can apply unit propagation
+        \begin{itemize}
+            \item set that literal to the appropriate truth value to satisfy its clause e.g.
+        \end{itemize}
         \begin{align*}
             \action<+->{
                 &\{\{b\}, \{\neg b, \neg c\}, \{c, \neg d\}\}\\
@@ -369,6 +372,7 @@
                 \item Learned clause deletion policies
                 \item Random restarts
             \end{enumerate}
+        \pause
         \item Often these are ``expertly tuned'', based on experience/intuition
     \end{itemize}
 \end{frame}
