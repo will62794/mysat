@@ -47,7 +47,7 @@ A basic approach to solving satisfiability is to view it as a search problem ove
 \end{align*}
 In this case, repeated application of unit propagation leads us to the empty formula, which, interpreted as an empty conjunction, is trivially satisfied. We also recover the satisfying assignment from this sequence of unit propagation applications i.e. $\{b=1,c=0,d=0\}$.
 
-DPLL performs a depth first search in the tree of possible assignments, backtracking when it encounters a \textit{conflict}, which is defined as occurring when some clause has all of its literals set to \textit{false} in a current partial assignment. To illustrate the work done by a run of DPLL on a given formula, we can show its \textit{termination tree}, which essentially shows the parts of the search tree that it explored during its run. For example, for the following CNF formula (with clauses labeled):
+DPLL performs a depth first search in the tree of possible assignments, backtracking when it encounters a \textit{conflict}, which is defined as occurring when some clause has all of its literals set to \textit{false} in a current partial assignment. To illustrate the work done by a run of DPLL on a given formula, we can show its \textit{termination tree}, which essentially shows the parts of the search tree that it explored during its run. For example, the termination tree for the following CNF formula (with clauses labeled):
 \begin{align*}
     &c_1 \quad \{a,b\}\\
     &c_2 \quad \{b,c\}\\
@@ -57,32 +57,112 @@ DPLL performs a depth first search in the tree of possible assignments, backtrac
     &c_6 \quad \{\neg a, x, \neg z\} \\
     &c_7 \quad \{\neg a, \neg y, \neg z\}
 \end{align*}
-we can see the paths taken by DPLL before it eventually finds a satisfying assignment where $\{a=0,b=1\}$.
+is depicted in Figure \ref{fig:dpll-term-tree}. It shows the paths taken by DPLL, leading to conflicts at the red ``X" nodes, before it eventually finds a satisfying assignment where $\{a=0,b=1\}$.
 
-% TODO: Get the figure working.
-% \begin{figure}
-%     \input{figures/cdcl-tree.tex}
-% \end{figure}
+\begin{figure}
+    \begin{center}
+    \begin{tikzpicture}
+        \node {$a$} [sibling distance = 2.9cm]
+        child [] {node {$b$} [sibling distance =3.65cm]
+            % c=1
+            child [] {node {$c$} [sibling distance = 1.75cm]
+                child [] {node {$x$} [sibling distance = 1.15cm]
+                    child [] {node {\red{X}} edge from parent [] node [left]{1}}
+                    child [] {node {\red{X}} edge from parent [] node [right]{0}}
+                edge from parent [] node [left]{1}} 
+                child [] {node {$x$} [sibling distance = 1.15cm]
+                    child [] {node {\red{X}} edge from parent [] node [left]{1}}
+                    child [] {node {\red{X}} edge from parent [] node [right]{0}}
+                edge from parent [] node [right]{0}}
+            edge from parent [] node [left]{1}}
+            % c=0
+            child [] {node {$c$} [sibling distance =1.75cm]
+                child [] {node {x} [sibling distance = 1.15cm]
+                    child [] {node {\red{X}} edge from parent [] node [left]{1}}
+                    child [] {node {\red{X}} edge from parent [] node [left]{1}}
+                edge from parent [] node [left]{1}}
+                child [] {node {x} [sibling distance = 1.15cm]
+                    child [] {node {\red{X}} edge from parent [] node [left]{1}}
+                    child [] {node {\red{X}} edge from parent [] node [left]{1}}  
+                edge from parent [] node [right]{0}}
+            % edge from parent [] node [left]{0}} 
+            edge from parent [] node [right]{0}}
+        edge from parent [] node [left]{1}}
+        % a = 0.
+        child [] {node {$b=1$\, $\{\}$ \green{SAT}} 
+        edge from parent [] node [right]{0}};
+    \end{tikzpicture}
+    \end{center}
+    \caption{DPLL termination tree.}
+    \label{fig:dpll-term-tree}
+\end{figure}
 
 \section{Conflict Driven Clause Learning (CDCL)}
 
-DPLL is a relatively naive algorithm, in the sense that it is fairly close to naive, brute force depth first search. An improvement to this framework that started being used in SAT solvers in the 1990s and 2000s is known as \textit{conflict driven clause learning} (CDCL). The technique is based around an idea of \textit{learning from conflicts} and \textit{non-chronological backtracking}. That is, when we encounter a conflict in a branch of the search tree (i.e. a clause is falsified), rather than simply backtracking naively, we try to learn more about what variable settings caused this conflict, in an effort to avoid making similar mistakes again in other portions of the search tree. In addition, we backtrack \textit{non-chronologically}. That is, rather than backtracking the previous level of the search tree, we may jump back many levels, avoiding variables that were potentially irrelevant to the conflict we encountered.
+DPLL is a relatively naive algorithm, in the sense that it is fairly close to naive, brute force depth first search. An improvement to this framework that started being used in SAT solvers in the 1990s and 2000s is known as \textit{conflict driven clause learning} (CDCL). The technique is based around ideas of (1) \textit{learning from conflicts} and (2) \textit{non-chronological backtracking}. That is, when we encounter a conflict in a branch of the search tree (i.e. a clause is falsified), rather than simply backtracking naively, we try to learn more about what variable settings caused this conflict, in an effort to avoid making similar mistakes again in other portions of the search tree. In addition, we backtrack \textit{non-chronologically}. That is, rather than backtracking the previous level of the search tree, we may jump back many levels, avoiding variables that were potentially irrelevant to the conflict we encountered.
+
+\begin{figure}
+    \begin{center}
+    \begin{tikzpicture}
+        \node {$a$} [sibling distance = 2.9cm]
+        child [] {node {$b$} [sibling distance =3.65cm]
+            % c=1
+            child [] {node {$c$} [sibling distance = 1.75cm]
+                child [] {node {$x$} [sibling distance = 1.15cm]
+                    child [] {node {\red{X}} edge from parent [] node [left]{\textbf{1}}}
+                    child [] {node {\red{X}} edge from parent [] node [right]{0}}
+                edge from parent [] node [left]{\textbf{1}}} 
+                child [] {node {$x$} [sibling distance = 1.15cm]
+                    child [] {node {\red{X}} edge from parent [] node [left]{1}}
+                    child [] {node {\red{X}} edge from parent [] node [right]{0}}
+                edge from parent [] node [right]{0}}
+            edge from parent [] node [left]{\textbf{1}}}
+            % c=0
+            child [] {node {$c$} [sibling distance =1.75cm]
+                child [] {node {x} [sibling distance = 1.15cm]
+                    child [] {node {\red{X}} edge from parent [] node [left]{1}}
+                    child [] {node {\red{X}} edge from parent [] node [left]{1}}
+                edge from parent [] node [left]{1}}
+                child [] {node {x} [sibling distance = 1.15cm]
+                    child [] {node {\red{X}} edge from parent [] node [left]{1}}
+                    child [] {node {\red{X}} edge from parent [] node [left]{1}}  
+                edge from parent [] node [right]{0}}
+            % edge from parent [] node [left]{0}} 
+            edge from parent [] node [right]{0}}
+        edge from parent [] node [left]{\textbf{1}}}
+        % a = 0.
+        child [] {node {$b=1$\, $\{\}$ \green{SAT}} 
+        edge from parent [] node [right]{0}};
+    \end{tikzpicture}
+    \end{center}
+    \caption{Learning from conflicts in CDCL.}
+    \label{fig:cdcl-term-tree}
+\end{figure}
+
+For example, if we consider the termination tree from Figure \ref{fig:dpll-term-tree} we can look at what happens when the first branch is explored by DPLL, as depicted in Figure \ref{fig:cdcl-term-tree}. We encounter a conflict in clause $c_7$ under the partial assignment of $\{a=1,b=1,c=1,x=1\}$, due to unit propagation being applied and triggering the assignments $\{y=1, z=1\}$. After encountering this conflict, naive DPLL would backtrack and try the next unexplored assignment to $x$. But, we can instead try to learn more information about why this conflict was encountered, in an effort to avoid making a similar mistake again in other regions of the search space. Specifically, we can see that, in fact, either $(a \wedge x)$ or $(a \wedge y)$ are both sufficient to lead to a conflict. So, we can implicitly encode this information as a new constraint in our original CNF formula. That is, we can simply add the negation $\neg (a \wedge x) = (\neg a \vee \neg x)$ as a new, \textit{learned clause}. Then, we can restart our search and treat the learned clause as if it were a normal clause of the original CNF formula. This is the basic intuition behind conflict driven clause learning. That is, when we encounter a conflict, we analyze to derive a clause that we can learn, and then add this a new constraint. In addition, we jump back in the search tree and restart, now with the newly learned clause as a part of our formula.
+
+We can view the conflict analysis procedure more formally by looking at the \textit{implication graph} of variable assignments in a path of the search tree. For example Figure \ref{fig:impl-graph} shows an implication graph corresponding to the leftmost search path depicted in Figure \ref{fig:cdcl-term-tree}. Nodes of this graph represent variable assignments, and edges represent dependencies between these assignments. That is, if a variable is assigned due to unit propagation, then it has incoming edges corresponding to the other variable assignments that caused it to become unit. Cuts in this graph then correspond to \textit{conflict sets}, which can be used to derive different learned clauses. 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.4]{figures/impl-graph.png}
+    \end{center}
+    \label{fig:impl-graph}
+    \caption{Implication graph with 3 possible cuts.}
+\end{figure}
 
 \section{SAT Solver Implementation}
 
-A large portion of this project consisted of working on an implementation of CDCL based SAT solver. The current version consists of approximately 1500 lines of C++, and the source code is found here: \url{https://github.com/will62794/mysat}. This code also includes an implementation of basic DPLL with unit propagation, in an effort to compare this approach with even a simple, non-optimized of CDCL.
+The large portion of work for this project consisted of implementing a basic, CDCL based SAT solver. The current version consists of approximately 1500 lines of C++, and the source code can be found at \url{https://github.com/will62794/mysat}. This code also includes an implementation of basic DPLL with unit propagation, in an effort to compare this approach with even a simple, non-optimized of CDCL.
 
-The DPLL implementation also allows for capturing a basic version of the termination tree, as a means to both debug the implementation and also to understand the work done by basic DPLL with unit propagation.
-
-
-A large part of the initial goal was to ensure correctness of the implemtnation before trying to benchmark its performance. Correctness testing was largely ensured by testing on randomly generated CNF formulas of varying sizes and with varying number of variables and clauses. In addition, the optimized, CDCL implementation was compared against a naive, brute force implementation to test conformance between the two implementations. This approach doesn't scale to large formulas, but works well for formulas with 10s of variables, since even a completely brute force solution can feasibly solve these instances.
+As part of this implementation effort, the initial goal was to ensure correctness of the CDCL solver before trying to benchmark its performance. Correctness testing was performed by testing on randomly generated CNF formulas of varying sizes and with varying number of variables and clauses. In addition, the optimized, CDCL implementation was compared against a naive, brute force implementation to test conformance between the two implementations. This approach doesn't scale to large formulas, but works well for formulas with 10s of variables, since even a completely brute force solution can feasibly solve these instances.
 
 \begin{figure}
     \begin{center}
         \includegraphics[scale=0.6]{../results/compare.pdf}
     \end{center}
+    \label{fig:benchmarks}
     \caption{Preliminary comparison of my SAT solver implementation for both CDCL and DPLL variants against the MiniSAT 2.2 solver \cite{minisat}. }
-    \ref{fig:benchmarks}
 \end{figure}
 
 % \section{Project Details}
@@ -119,6 +199,16 @@ A large part of the initial goal was to ensure correctness of the implemtnation 
 Our initial evaluation of solver performance consisted of testing a small set of graph coloring benchmarks using both our DPLL and CDCL implementation, and also comparing to MiniSAT version 2.2, which is not a state of the art solver today but includes most of the basic modern techniques used by modern state of the art solvers, and so is very performant relative to naive solver implementations. Our initial benchmarking results are shown in Figure \ref{fig:benchmarks}, where the x-axis displays time to solve a benchmark, or timeout within a fixed budget of 25 seconds, on a log scale. This small benchmark set includes a variety of graph coloring problem instances, with around 50-100 variables.
 
 % We will evaluate our solver's performance on a standard set of SAT benchmarks and compare with other state of the art solvers, drawing from winners of the recent SAT 2020 competitions \cite{2020satresults}. The solvers \textit{kissat}\cite{2020kissat}, \textit{cryptominisat} \cite{09cryptominisat}, and \textit{minisat}\cite{minisat} seem to be good targets to compare against. The SAT 2020 competition publishes the benchmarks used for the competition \cite{sat2020benchmarks}, so we plan to use these as a starting point for evaluation. If all of these are too hard for our solver, though, then we can resort to some other, hand generated benchmarks, or another set of various CNF benchmarks hosted at \cite{dimacsCNF}.
+
+\section{Future Goals}
+
+In future, the hope would be to explore new techniques for learning SAT heuristics, in the spirit of \textit{CrystalBall} \cite{2019sooscrystalball}, which applied a data driven approach to automatically learning heuristics for a solver. In particular heuristics for
+\begin{enumerate}
+    \item Variable ordering
+    \item Learned clause deletion policies
+    \item Random restarts
+\end{enumerate}
+would be all be interesting candidates to explore. Adding support for the output of DRAT resolution proofs \cite{2014dratproofs} for UNSAT cases in our SAT solver implementation would also be a desirable future goal.
 
 \bibliographystyle{plain}
 \bibliography{references}
