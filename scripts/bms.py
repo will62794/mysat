@@ -129,10 +129,14 @@ x = np.arange(len(bms))  # the label locations
 
 cs = ["red" if r["timeout"]=="True" else "black" for r in mysat_dpll_results]
 
+print("minisat")
+for r in minisat_durations:
+    print(r)
+
 # TODO: Consider distinguishing bars by texture so that color can be used to indicate timeouts as well.
 r1 = ax.barh(x,results[0],0.2, width, color=cs, label="mysat_dpll")
-r1 = ax.barh(x + 0.2,results[1],0.2, width, color="blue", label="mysat_cdcl")
-r2 = ax.barh(x + 0.4,results[2], width, color="orange", label="minisat2.2")
+r1 = ax.barh(x + 1*(width + 0.05),results[1],0.2, width, color="blue", label="mysat_cdcl")
+r2 = ax.barh(x + 2*(width + 0.05),results[2], width, color="orange", label="minisat2.2")
 # plt.plot(bms,results[0],color="blue")
 # plt.plot(bms,results[1],color="orange")
 # plt.set_xticks(bms)
