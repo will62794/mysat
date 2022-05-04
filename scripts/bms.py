@@ -82,7 +82,7 @@ def save_results(results, outfilename):
         writer.writerow(r)
     outfile.close()   
 
-if len(sys.argv) == 0:
+if len(sys.argv) == 1:
     # Run MiniSAT on benchmarks.
     print("# Running MiniSAT22")
     minisat_results = run_minisat22(bms)
@@ -140,7 +140,7 @@ r2 = ax.barh(x + 0.4,results[2], width, color="orange", label="minisat2.2")
 ax.set_yticks(x, [bm[bm.index("/")+1:] for bm in bms])
 ax.invert_yaxis()
 ax.set_xlabel("time to solve (ms)")
-# ax.set_xscale('log')
+ax.set_xscale('log')
 ax.legend()
 # ax.bar_label(r1)
 # ax.bar_label(r2, padding=3)
