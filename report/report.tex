@@ -3,40 +3,110 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{tikz}
 
 \begin{document}
 
-\title{CS 7240 Intermediate Project Report: CDCL SAT Solver Implementation}
+\title{CS 7240 Project Report: CDCL SAT Solver Implementation}
 \author{William Schultz}
 \date{\today}
 
 \maketitle
 
-\section{Overview}
+\newcommand{\green}[1]{\textcolor{green}{#1}}
+\newcommand{\red}[1]{\textcolor{red}{#1}}
 
-Satisfiability (SAT) solvers have become immensely powerful tools for solving hard, generic constraint satisfaction problems. Even though the SAT problem is known to be fundamentally hard (NP-complete), these tools are now effective at solving large, nontrivial real world problem instances and are applied widely in hardware and software verification, program analysis, electronic design automation, etc. The goal for this project will be to implement a SAT solver based on relatively state of the art techniques, which are mostly based on \textit{conflict driven clause learning} (CDCL) \cite{09bieresathandbook, bierecdcl,96sakallah}, an extension of the foundational DPLL algorithm \cite{1960dpll}. The goal is to implement the solver and compare its performance to other state of the art solvers.
+\section{Introduction}
 
-\section{Project Details}
+Satisfiability (SAT) solvers have become powerful tools for solving hard, generic constraint satisfaction problems. Even though the SAT problem is known to be fundamentally hard (NP-complete), these tools are now effective at solving large, nontrivial real world problem instances and are applied widely in hardware and software verification, program analysis, electronic design automation, etc. The goal of this project was to implement a SAT solver based on relatively state of the art techniques, which are mostly based on \textit{conflict driven clause learning} (CDCL) \cite{09bieresathandbook, bierecdcl,96sakallah}, an extension of the foundational DPLL algorithm \cite{1960dpll}. The goal was to implement the solver and compare its performance to other state of the art solvers, and to understand the underlying algorithms in more depth.
 
-The overall goal is to implement a CDCL based  SAT solver in C++ that accepts input in DIMACS CNF format \cite{dimacsCNF}. At a high level a SAT solver takes in a boolean formula $F$ in \textit{conjunctive normal form (CNF)} and returns a result of either \textit{sat}, along with a satisfying assignment that makes the given formula true, or \textit{unsat}, meaning no such assignment exists. In the case that the formula is satisfiable and a satisfying assignment is returned, it is easy to verify whether this result is correct. If a result of \textit{unsat} is returned, though, it may still be desirable to check the validity of this result. So, most modern solvers also return a refutation of $F$ which can be independently verified. This can be returned in the form of a resolution refutation \cite{2012benarilogic} proof. Our goal will be to also produce such proofs in the case that $F$ is unsatisfiable. We will aim to base our implementation and algorithms off of the treatments found in \cite{09bieresathandbook}.
+\section{Preliminaries}
 
-\subsection*{Progress Report (April 19, 2022)}
+The satisfiability problem is defined as follows. Given a boolean formula $f$ in conjunctive normal form (CNF), determine if there exists an assignment of values to the boolean variables of $f$ such that $f$ evaluates to true under this assignment. We want to return such a satisfying assignment, or determine that no such assignment exists. For example, the following CNF formula
+\begin{align*}
+    (x_1 \vee x_2) \wedge (\neg x_3 \vee \neg x_1)
+\end{align*}
+is satisfiable with an assignment $\{x_1=1, x_2=0, x_3=0\}$. The standard convention is to view CNF formulas as sets of clauses, where a clause is simply a set of \textit{literals} i.e. a variable or its negation. Thus, the above formula would be represented as the set
+\begin{align*}
+    \{\{x_1,x_2\}, \{\neg x_3, \neg x_1\}\}
+\end{align*}
+Determining satisfiability of an arbitrary boolean formula in CNF is NP-complete \cite{71cook}.
 
-Completed milestones:
+\section{DPLL}
 
-\begin{itemize}
-    \item Basic working DPLL SAT solver implementation with unit resolution. Current source code \href{https://github.com/will62794/mysat}{here}.
-    \item Test harness that checks correctness of solver implementation on randomly generated CNF formulas against brute force SAT solving method.
-    \item Visualization of termination tree (i.e. search tree) as DOT graph.
-\end{itemize}
-Remaining work items:
-\begin{itemize}
-    \item Implement conflict driven clause learning (CDCL) on top of the basic DPLL backtracking algorithm.
-    \item Implement ability to generate certificates of unsatisfiability. We plan to generate unsat proofs based on the RUP (Reverse Unit Propagation) format \cite{goldberg03,heule13}.
-    \item Use the DRAT-trim checker tool to test the correctness of our unsat proofs \cite{drattrimtool}.
-    \item Evaluate our CDCL SAT solver implementation on varied benchmark set and compare its performance to Kissat\cite{2020kissat}, which won the main track of SAT 2020 competition.
-    % We will use the DRAT-trim checker tool to verify the correctness of our proofs.
-\end{itemize}
+A basic approach to solving satisfiability is to view it as a search problem over possible assignments to variables. This is the basic idea behind the Davis–Putnam–Logemann–Loveland (DPLL) algorithm \cite{dpll1961}. The DPLL algorithm essentially performs a depth first, brute first search over the tree of possible assignments, performing basic formula simplifications under as it extends partial assignments in its search. In particular, standard DPLL employs the \textit{unit propagation} rule. A clause in a CNF formula is a \textit{unit clause} if it contains exactly one literal. For a CNF that contains a unit clause $c$, it must be that in any possible satisfying assignment, $c$ must be true, so we must set the variable for the literal in $c$ accordingly to make $c$ true. For example, consider the repeated application of unit propagation to the following formula:
+\begin{align*}
+    &\{\{b\}, \{\neg b, \neg c\}, \{c, \neg d\}\}\\
+    &\{\{\green{b}\}, \{\red{\neg b}, \neg c\}, \{c, \neg d\}\}\\
+    &\{\{\neg c\}, \{c, \neg d\}\} \\
+    &\{\{\green{\neg c}\}, \{\red{c}, \neg d\}\}\\
+    &\{\{\neg d\}\}\\
+    &\{\{\green{\neg d}\}\}\\
+    &\{\} \quad (\text{SAT})
+\end{align*}
+In this case, repeated application of unit propagation leads us to the empty formula, which, interpreted as an empty conjunction, is trivially satisfied. We also recover the satisfying assignment from this sequence of unit propagation applications i.e. $\{b=1,c=0,d=0\}$.
+
+DPLL performs a depth first search in the tree of possible assignments, backtracking when it encounters a \textit{conflict}, which is defined as occurring when some clause has all of its literals set to \textit{false} in a current partial assignment. To illustrate the work done by a run of DPLL on a given formula, we can show its \textit{termination tree}, which essentially shows the parts of the search tree that it explored during its run. For example, for the following CNF formula (with clauses labeled):
+\begin{align*}
+    &c_1 \quad \{a,b\}\\
+    &c_2 \quad \{b,c\}\\
+    &c_3 \quad \{\neg a, \neg x, y\} \\
+    &c_4 \quad \{\neg a, x, z\} \\
+    &c_5 \quad \{\neg a, \neg y, z\} \\
+    &c_6 \quad \{\neg a, x, \neg z\} \\
+    &c_7 \quad \{\neg a, \neg y, \neg z\}
+\end{align*}
+we can see the paths taken by DPLL before it eventually finds a satisfying assignment where $\{a=0,b=1\}$.
+
+% TODO: Get the figure working.
+% \begin{figure}
+%     \input{figures/cdcl-tree.tex}
+% \end{figure}
+
+\section{Conflict Driven Clause Learning (CDCL)}
+
+DPLL is a relatively naive algorithm, in the sense that it is fairly close to naive, brute force depth first search. An improvement to this framework that started being used in SAT solvers in the 1990s and 2000s is known as \textit{conflict driven clause learning} (CDCL). The technique is based around an idea of \textit{learning from conflicts} and \textit{non-chronological backtracking}. That is, when we encounter a conflict in a branch of the search tree (i.e. a clause is falsified), rather than simply backtracking naively, we try to learn more about what variable settings caused this conflict, in an effort to avoid making similar mistakes again in other portions of the search tree. In addition, we backtrack \textit{non-chronologically}. That is, rather than backtracking the previous level of the search tree, we may jump back many levels, avoiding variables that were potentially irrelevant to the conflict we encountered.
+
+\section{SAT Solver Implementation}
+
+A large portion of this project consisted of working on an implementation of CDCL based SAT solver. The current version consists of approximately 1500 lines of C++, and the source code is found here: \url{https://github.com/will62794/mysat}. This code also includes an implementation of basic DPLL with unit propagation, in an effort to compare this approach with even a simple, non-optimized of CDCL.
+
+The DPLL implementation also allows for capturing a basic version of the termination tree, as a means to both debug the implementation and also to understand the work done by basic DPLL with unit propagation.
+
+
+A large part of the initial goal was to ensure correctness of the implemtnation before trying to benchmark its performance. Correctness testing was largely ensured by testing on randomly generated CNF formulas of varying sizes and with varying number of variables and clauses. In addition, the optimized, CDCL implementation was compared against a naive, brute force implementation to test conformance between the two implementations. This approach doesn't scale to large formulas, but works well for formulas with 10s of variables, since even a completely brute force solution can feasibly solve these instances.
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.6]{../results/compare.pdf}
+    \end{center}
+    \caption{Preliminary comparison of my SAT solver implementation for both CDCL and DPLL variants against the MiniSAT 2.2 solver \cite{minisat}. }
+    \ref{fig:benchmarks}
+\end{figure}
+
+% \section{Project Details}
+
+% The overall goal is to implement a CDCL based  SAT solver in C++ that accepts input in DIMACS CNF format \cite{dimacsCNF}. At a high level a SAT solver takes in a boolean formula $F$ in \textit{conjunctive normal form (CNF)} and returns a result of either \textit{sat}, along with a satisfying assignment that makes the given formula true, or \textit{unsat}, meaning no such assignment exists. In the case that the formula is satisfiable and a satisfying assignment is returned, it is easy to verify whether this result is correct. If a result of \textit{unsat} is returned, though, it may still be desirable to check the validity of this result. So, most modern solvers also return a refutation of $F$ which can be independently verified. This can be returned in the form of a resolution refutation \cite{2012benarilogic} proof. Our goal will be to also produce such proofs in the case that $F$ is unsatisfiable. We will aim to base our implementation and algorithms off of the treatments found in \cite{09bieresathandbook}.
+
+
+% \subsection*{Progress Report (April 19, 2022)}
+
+% Completed milestones:
+
+% \begin{itemize}
+%     \item Basic working DPLL SAT solver implementation with unit resolution. Current source code \href{https://github.com/will62794/mysat}{here}.
+%     \item Test harness that checks correctness of solver implementation on randomly generated CNF formulas against brute force SAT solving method.
+%     \item Visualization of termination tree (i.e. search tree) as DOT graph.
+% \end{itemize}
+% Remaining work items:
+% \begin{itemize}
+%     \item Implement conflict driven clause learning (CDCL) on top of the basic DPLL backtracking algorithm.
+%     \item Implement ability to generate certificates of unsatisfiability. We plan to generate unsat proofs based on the RUP (Reverse Unit Propagation) format \cite{goldberg03,heule13}.
+%     \item Use the DRAT-trim checker tool to test the correctness of our unsat proofs \cite{drattrimtool}.
+%     \item Evaluate our CDCL SAT solver implementation on varied benchmark set and compare its performance to Kissat\cite{2020kissat}, which won the main track of SAT 2020 competition.
+%     % We will use the DRAT-trim checker tool to verify the correctness of our proofs.
+% \end{itemize}
 
 % \begin{itemize}
 %     \item Parse CNF format
@@ -44,8 +114,11 @@ Remaining work items:
 %     \item Use CDCL based SAT algorithm.
 % \end{itemize}
 
-\section{Evaluation Plan}
-We will evaluate our solver's performance on a standard set of SAT benchmarks and compare with other state of the art solvers, drawing from winners of the recent SAT 2020 competitions \cite{2020satresults}. The solvers \textit{kissat}\cite{2020kissat}, \textit{cryptominisat} \cite{09cryptominisat}, and \textit{minisat}\cite{minisat} seem to be good targets to compare against. The SAT 2020 competition publishes the benchmarks used for the competition \cite{sat2020benchmarks}, so we plan to use these as a starting point for evaluation. If all of these are too hard for our solver, though, then we can resort to some other, hand generated benchmarks, or another set of various CNF benchmarks hosted at \cite{dimacsCNF}.
+\section{Evaluation}
+
+Our initial evaluation of solver performance consisted of testing a small set of graph coloring benchmarks using both our DPLL and CDCL implementation, and also comparing to MiniSAT version 2.2, which is not a state of the art solver today but includes most of the basic modern techniques used by modern state of the art solvers, and so is very performant relative to naive solver implementations. Our initial benchmarking results are shown in Figure \ref{fig:benchmarks}, where the x-axis displays time to solve a benchmark, or timeout within a fixed budget of 25 seconds, on a log scale. This small benchmark set includes a variety of graph coloring problem instances, with around 50-100 variables.
+
+% We will evaluate our solver's performance on a standard set of SAT benchmarks and compare with other state of the art solvers, drawing from winners of the recent SAT 2020 competitions \cite{2020satresults}. The solvers \textit{kissat}\cite{2020kissat}, \textit{cryptominisat} \cite{09cryptominisat}, and \textit{minisat}\cite{minisat} seem to be good targets to compare against. The SAT 2020 competition publishes the benchmarks used for the competition \cite{sat2020benchmarks}, so we plan to use these as a starting point for evaluation. If all of these are too hard for our solver, though, then we can resort to some other, hand generated benchmarks, or another set of various CNF benchmarks hosted at \cite{dimacsCNF}.
 
 \bibliographystyle{plain}
 \bibliography{references}
